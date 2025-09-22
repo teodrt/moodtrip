@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/use-toast'
+import { createIdea } from '@/app/actions'
 
 const budgetOptions = [
   { value: 'LOW', label: 'Economy', icon: '💰', description: 'Budget-friendly options' },
@@ -52,10 +53,17 @@ export function LuxuryCreateIdeaForm({ slug }: LuxuryCreateIdeaFormProps) {
     e.preventDefault()
     if (!formData.prompt.trim() || isSubmitting) return
 
+    console.log('🚀 Starting idea creation...', { formData, slug })
     setIsSubmitting(true)
 
     try {
-      const { createIdea } = await import('@/app/actions')
+      console.log('💡 Calling createIdea with:', {
+        groupSlug: slug,
+        prompt: formData.prompt,
+        budget: formData.budgetLevel as 'LOW' | 'MEDIUM' | 'HIGH' | undefined,
+        kids: formData.kidsFriendly,
+        month: formData.monthHint || undefined
+      })
 
       const result = await createIdea({
         groupSlug: slug,
@@ -64,6 +72,8 @@ export function LuxuryCreateIdeaForm({ slug }: LuxuryCreateIdeaFormProps) {
         kids: formData.kidsFriendly,
         month: formData.monthHint || undefined
       })
+
+      console.log('✅ Idea created successfully:', result)
 
       toast({
         title: "✨ Idea Created!",
@@ -75,7 +85,7 @@ export function LuxuryCreateIdeaForm({ slug }: LuxuryCreateIdeaFormProps) {
         router.push(`/i/${result.id}`)
       }, 500)
     } catch (error) {
-      console.error('Error creating idea:', error)
+      console.error('❌ Error creating idea:', error)
       toast({
         title: "Error",
         description: "Failed to create idea. Please try again.",

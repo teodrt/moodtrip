@@ -61,7 +61,10 @@ export async function createIdea(input: CreateIdeaInput): Promise<CreateIdeaResu
     })
 
     // Generate moodboard asynchronously
-    generateMoodboard(idea.id).catch(console.error)
+    generateMoodboard(idea.id).catch((error) => {
+      console.error('Error generating moodboard:', error)
+      // Don't fail the idea creation if moodboard generation fails
+    })
 
     // Send notification for new idea
     onNewIdea(group.id, idea.id).catch(console.error)
@@ -129,7 +132,12 @@ export async function generateMoodboard(ideaId: string): Promise<void> {
 
     console.log(`Moodboard generated successfully for idea ${ideaId}`)
   } catch (error) {
-    console.error('Error generating moodboard:', error)
+    console.error('❌ Error generating moodboard:', error)
+    // Update idea status to FAILED if moodboard generation fails
+    await prisma.idea.update({
+      where: { id: ideaId },
+      data: { status: 'FAILED' }
+    }).catch(console.error)
     // Don't throw - this is async and shouldn't break the main flow
   }
 }

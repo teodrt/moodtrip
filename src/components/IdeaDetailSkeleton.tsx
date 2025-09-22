@@ -1,7 +1,39 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function IdeaDetailSkeleton() {
+interface IdeaDetailSkeletonProps {
+  ideaId?: string;
+}
+
+export function IdeaDetailSkeleton({ ideaId }: IdeaDetailSkeletonProps) {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!ideaId) return;
+
+    // Poll for idea status updates every 2 seconds
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/ideas/${ideaId}/status`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.status === 'PUBLISHED' || data.status === 'FAILED') {
+            clearInterval(interval);
+            router.refresh(); // Refresh the page to show updated content
+          }
+        }
+      } catch (error) {
+        console.error('Error polling idea status:', error);
+      }
+    }, 2000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
+  }, [ideaId, router]);
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-6 py-8">
