@@ -2,8 +2,9 @@ import { IdeaDetailSkeleton } from "@/components/IdeaDetailSkeleton";
 import { getIdeaById } from "@/app/actions";
 import { IdeaDetailClient } from "./IdeaDetailClient";
 
-export default async function IdeaDetailPage({ params }: { params: { id: string } }) {
-  const idea = await getIdeaById(params.id);
+export default async function IdeaDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const idea = await getIdeaById(id);
 
   if (!idea) {
     return (

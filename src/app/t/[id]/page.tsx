@@ -1,8 +1,9 @@
 import { getTripById } from "@/app/actions";
 import { TripBoard } from "./TripBoard";
 
-export default async function TripPage({ params }: { params: { id: string } }) {
-  const trip = await getTripById(params.id);
+export default async function TripPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const trip = await getTripById(id);
 
   if (!trip) {
     return (

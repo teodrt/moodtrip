@@ -5,8 +5,8 @@ import { IdeaCard } from "@/components/IdeaCard";
 import { EmptyIdeasFeed } from "@/components/EmptyStates";
 import { getIdeasByGroupSlug } from "@/app/actions";
 
-export default async function GroupFeedPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default async function GroupFeedPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   
   // Fetch ideas from database
   const ideas = await getIdeasByGroupSlug(slug);

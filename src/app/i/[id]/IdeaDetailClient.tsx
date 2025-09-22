@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,6 +14,7 @@ import { ColorPalette } from "@/components/ColorPalette"
 import { VotingSection } from "@/components/VotingSection"
 import { CommentsSection } from "@/components/CommentsSection"
 import { EmptyIdeaImages, EmptyComments } from "@/components/EmptyStates"
+import { LuxuryIdeaLayout } from "@/components/LuxuryIdeaLayout"
 
 interface IdeaDetailClientProps {
   idea: {
@@ -61,6 +62,10 @@ interface IdeaDetailClientProps {
 export function IdeaDetailClient({ idea }: IdeaDetailClientProps) {
   const router = useRouter()
   const [isPromoting, setIsPromoting] = useState(false)
+  const [isVoting, setIsVoting] = useState(false)
+  const [isCommenting, setIsCommenting] = useState(false)
+  const [localVotes, setLocalVotes] = useState(idea.votes)
+  const [localComments, setLocalComments] = useState(idea.comments)
 
   // Poll for status updates if idea is still being generated
   useEffect(() => {
@@ -70,12 +75,14 @@ export function IdeaDetailClient({ idea }: IdeaDetailClientProps) {
           const response = await fetch(`/api/ideas/${idea.id}/status`)
           const data = await response.json()
           if (data.status === 'PUBLISHED') {
+            // Instead of reloading, we'll show a success message and reload
+            console.log('Idea generation completed!')
             window.location.reload()
           }
         } catch (error) {
           console.error('Error polling status:', error)
         }
-      }, 2000)
+      }, 3000) // Increased interval to 3 seconds
 
       return () => clearInterval(pollInterval)
     }
@@ -95,6 +102,67 @@ export function IdeaDetailClient({ idea }: IdeaDetailClientProps) {
       setIsPromoting(false)
     }
   }
+
+  const handleVote = useCallback(async (ideaId: string, voteType: 'UP' | 'MAYBE' | 'DOWN') => {
+    if (isVoting) return
+    setIsVoting(true)
+
+    // Optimistic UI update
+    setLocalVotes(prev => {
+      const newVotes = { ...prev }
+      if (voteType === 'UP') newVotes.up++
+      else if (voteType === 'MAYBE') newVotes.maybe++
+      else if (voteType === 'DOWN') newVotes.down++
+      return newVotes
+    })
+
+    try {
+      const { voteIdea } = await import('@/app/actions')
+      await voteIdea(ideaId, voteType)
+      // No need to revalidate path here, as votes are handled optimistically
+    } catch (error) {
+      console.error('Error voting on idea:', error)
+      // Revert optimistic update on error
+      setLocalVotes(idea.votes)
+      // Handle error (e.g., show a toast)
+    } finally {
+      setIsVoting(false)
+    }
+  }, [isVoting, idea.votes])
+
+  const handleComment = useCallback(async (ideaId: string, commentBody: string) => {
+    if (isCommenting || !commentBody.trim()) return
+    setIsCommenting(true)
+
+    // Optimistic UI update
+    const newComment = {
+      id: `temp-${Date.now()}`, // Temporary ID
+      body: commentBody,
+      createdAt: new Date(),
+      author: { name: 'You', avatar: null }, // Assuming 'You' for optimistic update
+    }
+    setLocalComments(prev => [...prev, newComment])
+
+    try {
+      const { commentIdea } = await import('@/app/actions')
+      const result = await commentIdea(ideaId, commentBody)
+      // Replace temp comment with real one
+      setLocalComments(prev => 
+        prev.map(comment => 
+          comment.id === newComment.id 
+            ? { ...result, author: { name: 'You', avatar: null } }
+            : comment
+        )
+      )
+    } catch (error) {
+      console.error('Error commenting on idea:', error)
+      // Remove temp comment on error
+      setLocalComments(prev => prev.filter(comment => comment.id !== newComment.id))
+      // Handle error (e.g., show a toast)
+    } finally {
+      setIsCommenting(false)
+    }
+  }, [isCommenting])
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -119,189 +187,16 @@ export function IdeaDetailClient({ idea }: IdeaDetailClientProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link
-            href={`/g/${idea.group.slug}`}
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 transition-colors mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to {idea.group.slug} group
-          </Link>
-
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            {idea.title}
-          </h1>
-          <p className="text-gray-600 text-lg">
-            {formatDate(idea.createdAt)} • by {idea.author.name}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
-                  <div className="md:col-span-2 space-y-8">
-                    {/* Image Mosaic */}
-                    {idea.images.length > 0 ? (
-                      <ImageMosaic images={idea.images} />
-                    ) : (
-                      <EmptyIdeaImages />
-                    )}
-
-                    {/* Color Palette */}
-                    <ColorPalette colors={idea.palette} />
-
-            {/* AI Summary */}
-            {idea.summary && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="space-y-4"
-              >
-                <h2 className="text-2xl font-semibold text-gray-900">AI Summary</h2>
-                <Card>
-                  <CardContent className="p-6">
-                    <p className="text-gray-700 leading-relaxed">{idea.summary}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-
-            {/* Voting Section */}
-            <VotingSection ideaId={idea.id} initialVotes={idea.votes} />
-
-            {/* Comments Section */}
-            <CommentsSection ideaId={idea.id} initialComments={idea.comments} />
-          </div>
-
-          {/* Sidebar */}
-          <div className="md:col-span-1 space-y-6">
-            {/* Author Card */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={idea.author.avatar || undefined} />
-                      <AvatarFallback>
-                        {idea.author.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-semibold">{idea.author.name}</h3>
-                      <p className="text-sm text-gray-500">Author</p>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
-            </motion.div>
-
-            {/* Idea Details */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Idea Details</CardTitle>
-                  <CardDescription>Additional information about this travel idea</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {idea.budgetLevel && (
-                    <div className="flex justify-between items-center">
-                      <span className="flex items-center gap-2 text-sm text-gray-600">
-                        <DollarSign className="h-4 w-4" />
-                        Budget
-                      </span>
-                      <Badge variant="secondary">
-                        {getBudgetIcon(idea.budgetLevel)} {idea.budgetLevel}
-                      </Badge>
-                    </div>
-                  )}
-                  
-                  {idea.monthHint && (
-                    <div className="flex justify-between items-center">
-                      <span className="flex items-center gap-2 text-sm text-gray-600">
-                        <Calendar className="h-4 w-4" />
-                        Month
-                      </span>
-                      <Badge variant="secondary">
-                        {getMonthName(idea.monthHint)}
-                      </Badge>
-                    </div>
-                  )}
-                  
-                  {idea.kidsFriendly && (
-                    <div className="flex justify-between items-center">
-                      <span className="flex items-center gap-2 text-sm text-gray-600">
-                        <Baby className="h-4 w-4" />
-                        Kids-friendly
-                      </span>
-                      <Badge variant="secondary">Yes</Badge>
-                    </div>
-                  )}
-
-                  {idea.tags.length > 0 && (
-                    <div className="space-y-2">
-                      <span className="text-sm text-gray-600">Tags</span>
-                      <div className="flex flex-wrap gap-1">
-                        {idea.tags.map((tag, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Promote to Trip - Only show to author or admin */}
-            {(idea.author.name === 'You' || idea.author.name === 'Admin') && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Ready to Plan?</CardTitle>
-                    <CardDescription>
-                      Turn this idea into a real trip
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button
-                      onClick={handlePromoteToTrip}
-                      disabled={isPromoting}
-                      className="w-full"
-                    >
-                      {isPromoting ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Creating Trip...
-                        </>
-                      ) : (
-                        <>
-                          <Plane className="h-4 w-4 mr-2" />
-                          Promote to Trip
-                        </>
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+    <LuxuryIdeaLayout
+      idea={idea}
+      onPromoteToTrip={handlePromoteToTrip}
+      isPromoting={isPromoting}
+      onVote={handleVote}
+      onComment={handleComment}
+      isVoting={isVoting}
+      isCommenting={isCommenting}
+      localVotes={localVotes}
+      localComments={localComments}
+    />
   )
 }

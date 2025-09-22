@@ -2,8 +2,9 @@ import { getGroupAvailability } from "@/app/actions";
 import { AvailabilityForm } from "./AvailabilityForm";
 import { GroupHeatmap } from "./GroupHeatmap";
 
-export default async function AvailabilityPage({ params }: { params: { slug: string } }) {
-  const groupAvailability = await getGroupAvailability(params.slug);
+export default async function AvailabilityPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const groupAvailability = await getGroupAvailability(slug);
 
   if (!groupAvailability) {
     return (
