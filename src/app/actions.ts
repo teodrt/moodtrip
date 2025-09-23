@@ -5,19 +5,12 @@ import { revalidatePath } from 'next/cache'
 import { generateImages, generateSummary, extractPalette, generateTags } from '@/lib/ai'
 import { downloadAndSaveImages, checkImagesExist, getExistingImageUrls } from '@/lib/file-utils'
 import { onNewIdea, onPromoteTrip } from '@/lib/notify'
-// import { auth } from '@/lib/auth' // Disabled due to import issues
+import { createIdeaSchema, voteIdeaSchema, commentIdeaSchema, updateAvailabilitySchema, validateInput, type CreateIdeaInput, type VoteIdeaInput, type CommentIdeaInput, type UpdateAvailabilityInput } from '@/lib/validations'
+import { auth } from '@/lib/auth'
 
 // Types
 type BudgetLevel = 'LOW' | 'MEDIUM' | 'HIGH'
 type VoteValue = 'UP' | 'MAYBE' | 'DOWN'
-
-interface CreateIdeaInput {
-  groupSlug: string
-  prompt: string
-  budget?: BudgetLevel
-  kids?: boolean
-  month?: number
-}
 
 interface CreateIdeaResult {
   id: string
@@ -32,27 +25,33 @@ interface PromoteToTripResult {
  */
 export async function createIdea(input: CreateIdeaInput): Promise<CreateIdeaResult> {
   try {
+    // Validate input
+    const validatedInput = validateInput(createIdeaSchema, input)
+    
+    // Get authenticated user
+    const session = await auth()
+    if (!session?.user?.id) {
+      throw new Error('Authentication required to create ideas')
+    }
+    
     // Find the group by slug
     const group = await prisma.group.findUnique({
-      where: { slug: input.groupSlug }
+      where: { slug: validatedInput.groupSlug }
     })
 
     if (!group) {
-      throw new Error(`Group with slug "${input.groupSlug}" not found`)
+      throw new Error(`Group with slug "${validatedInput.groupSlug}" not found`)
     }
-
-    // Use hardcoded user for now (auth disabled due to import issues)
-    const userId = 'cmfva3td500006ermy5186aw7'
 
     // Create the idea
     const idea = await prisma.idea.create({
       data: {
-        title: input.prompt.substring(0, 100), // Use first 100 chars as title
-        prompt: input.prompt,
+        title: validatedInput.prompt.substring(0, 100), // Use first 100 chars as title
+        prompt: validatedInput.prompt,
         groupId: group.id,
-        authorId: userId,
-        budgetLevel: input.budget || null,
-        monthHint: input.month || null,
+        authorId: session.user.id,
+        budgetLevel: validatedInput.budget || null,
+        monthHint: validatedInput.month || null,
         status: 'DRAFT',
         tags: [], // Will be populated by AI
         palette: undefined, // Will be generated
@@ -60,10 +59,16 @@ export async function createIdea(input: CreateIdeaInput): Promise<CreateIdeaResu
       }
     })
 
-    // Generate moodboard asynchronously
-    generateMoodboard(idea.id).catch((error) => {
-      console.error('Error generating moodboard:', error)
-      // Don't fail the idea creation if moodboard generation fails
+    // Generate moodboard asynchronously (with better error handling)
+    console.log('🚀 Starting moodboard generation for idea:', idea.id)
+    Promise.resolve().then(async () => {
+      try {
+        await generateMoodboard(idea.id)
+        console.log('✅ Moodboard generation completed for idea:', idea.id)
+      } catch (error) {
+        console.error('❌ Error generating moodboard for idea', idea.id, ':', error)
+        console.error('Full error stack:', error.stack)
+      }
     })
 
     // Send notification for new idea
@@ -72,12 +77,27 @@ export async function createIdea(input: CreateIdeaInput): Promise<CreateIdeaResu
     // Track analytics (server-side safe)
     console.log('Idea created:', idea.id, 'for group:', group.id)
 
-    revalidatePath(`/g/${input.groupSlug}`)
+    revalidatePath(`/g/${validatedInput.groupSlug}`)
     
     return { id: idea.id }
   } catch (error) {
     console.error('Error creating idea:', error)
-    throw new Error('Failed to create idea')
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('Validation error')) {
+        throw error // Re-throw validation errors as-is
+      }
+      if (error.message.includes('Group with slug')) {
+        throw new Error(`Group not found: ${error.message}`)
+      }
+      if (error.message.includes('Unique constraint')) {
+        throw new Error('An idea with this content already exists')
+      }
+    }
+    
+    // Generic fallback
+    throw new Error('Failed to create idea. Please try again.')
   }
 }
 
@@ -86,8 +106,10 @@ export async function createIdea(input: CreateIdeaInput): Promise<CreateIdeaResu
  * Idempotent: skips regeneration if images already exist
  */
 export async function generateMoodboard(ideaId: string): Promise<void> {
+  console.log('🎨 Starting moodboard generation for idea:', ideaId)
   try {
     // 1. Load idea (prompt)
+    console.log('📋 Loading idea from database...')
     const idea = await prisma.idea.findUnique({
       where: { id: ideaId },
       include: { images: true }
@@ -96,6 +118,8 @@ export async function generateMoodboard(ideaId: string): Promise<void> {
     if (!idea) {
       throw new Error('Idea not found')
     }
+    
+    console.log('📋 Idea loaded:', { id: idea.id, title: idea.title, status: idea.status })
 
     // Check if moodboard already exists (idempotency)
     if (idea.status === 'PUBLISHED' && idea.images.length > 0) {
@@ -104,11 +128,12 @@ export async function generateMoodboard(ideaId: string): Promise<void> {
     }
 
     // 2. Generate images using AI
+    console.log('🖼️ Generating images for prompt:', idea.prompt)
     const imageResult = await generateImages(idea.prompt)
-    console.log(`Generated ${imageResult.urls.length} images using ${imageResult.provider}`)
+    console.log(`🖼️ Generated ${imageResult.urls.length} images using ${imageResult.provider}`)
 
     // 3. Download and save images locally
-    const savedImages = await downloadAndSaveImages(ideaId, imageResult.urls, imageResult.source, imageResult.provider)
+    const savedImages = await downloadAndSaveImages(imageResult.urls, ideaId)
 
     // 4. Generate summary and tags using AI
     const [summary, tags] = await Promise.all([
@@ -117,9 +142,31 @@ export async function generateMoodboard(ideaId: string): Promise<void> {
     ])
 
     // 5. Extract color palette from first image
-    const palette = savedImages.length > 0 ? await extractPalette(savedImages[0].localPath) : []
+    const palette = savedImages && savedImages.length > 0 ? await extractPalette(savedImages) : []
 
-    // 6. Update idea with generated content
+    // 6. Save images to database
+    if (savedImages.length > 0) {
+      console.log('Saving images to database:', savedImages)
+      try {
+        await prisma.image.createMany({
+          data: savedImages.map((url, index) => ({
+            ideaId,
+            url,
+            source: imageResult.source,
+            provider: imageResult.provider,
+            order: index
+          }))
+        })
+        console.log(`Successfully saved ${savedImages.length} images to database`)
+      } catch (error) {
+        console.error('Error saving images to database:', error)
+        throw error
+      }
+    } else {
+      console.warn('No images to save to database')
+    }
+
+    // 7. Update idea with generated content
     await prisma.idea.update({
       where: { id: ideaId },
       data: {
@@ -136,7 +183,7 @@ export async function generateMoodboard(ideaId: string): Promise<void> {
     // Update idea status to FAILED if moodboard generation fails
     await prisma.idea.update({
       where: { id: ideaId },
-      data: { status: 'FAILED' }
+      data: { status: 'DRAFT' }
     }).catch(console.error)
     // Don't throw - this is async and shouldn't break the main flow
   }
@@ -147,27 +194,33 @@ export async function generateMoodboard(ideaId: string): Promise<void> {
  */
 export async function voteIdea(ideaId: string, voteType: VoteValue): Promise<void> {
   try {
+    // Validate input
+    const validatedInput = validateInput(voteIdeaSchema, { ideaId, voteType })
+    
+    // Get authenticated user
     const session = await auth()
-    const userId = session?.user?.id || 'cmfva3td500006ermy5186aw7'
+    if (!session?.user?.id) {
+      throw new Error('Authentication required to vote on ideas')
+    }
 
     await prisma.vote.upsert({
       where: {
         userId_ideaId: {
-          userId,
-          ideaId
+          userId: session.user.id,
+          ideaId: validatedInput.ideaId
         }
       },
       update: {
-        value: voteType
+        value: validatedInput.voteType
       },
       create: {
-        userId,
-        ideaId,
-        value: voteType
+        userId: session.user.id,
+        ideaId: validatedInput.ideaId,
+        value: validatedInput.voteType
       }
     })
 
-    revalidatePath(`/i/${ideaId}`)
+    revalidatePath(`/i/${validatedInput.ideaId}`)
   } catch (error) {
     console.error('Error voting on idea:', error)
     throw new Error('Failed to vote on idea')

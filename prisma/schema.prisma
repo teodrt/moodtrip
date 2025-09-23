@@ -37,6 +37,7 @@ model User {
   activities   UserActivity[]
 }
 
+
 model Group {
   id           String        @id @default(cuid())
   name         String

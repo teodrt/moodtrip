@@ -9,16 +9,21 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon-192x192.png",
+      "src": "/icon-192x192.svg",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable any"
+      "type": "image/svg+xml",
+      "purpose": "any"
     },
     {
-      "src": "/icon-512x512.png",
+      "src": "/icon-512x512.svg",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable any"
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon"
     }
   ],
   "categories": ["travel", "lifestyle", "productivity"],
@@ -34,7 +39,7 @@
       "url": "/g/family/new",
       "icons": [
         {
-          "src": "/icon-192x192.png",
+          "src": "/icon-192x192.svg",
           "sizes": "192x192"
         }
       ]
@@ -46,7 +51,7 @@
       "url": "/g/family",
       "icons": [
         {
-          "src": "/icon-192x192.png",
+          "src": "/icon-192x192.svg",
           "sizes": "192x192"
         }
       ]

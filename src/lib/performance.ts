@@ -1,236 +1,400 @@
-/**
- * Performance Monitoring Utilities
- * Track Core Web Vitals and custom metrics
- */
+// src/lib/performance.ts
 
-interface PerformanceMetric {
-  name: string
-  value: number
-  delta: number
-  id: string
-  navigationType: string
+import { useEffect, useRef, useState, useCallback } from 'react'
+
+// Debounce hook for performance optimization
+export function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+
+  return debouncedValue
 }
 
-interface CustomMetric {
-  name: string
-  value: number
-  timestamp: number
-  metadata?: Record<string, any>
-}
+// Throttle hook for performance optimization
+export function useThrottle<T>(value: T, delay: number): T {
+  const [throttledValue, setThrottledValue] = useState<T>(value)
+  const lastExecuted = useRef<number>(Date.now())
 
-class PerformanceMonitor {
-  private metrics: CustomMetric[] = []
-  private observers: PerformanceObserver[] = []
-
-  constructor() {
-    this.initializeWebVitals()
-    this.initializeCustomMetrics()
-  }
-
-  private initializeWebVitals() {
-    // Track Core Web Vitals
-    if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
-      // Largest Contentful Paint (LCP)
-      this.observeMetric('largest-contentful-paint', (entry) => {
-        this.recordMetric('LCP', entry.startTime, {
-          element: entry.element?.tagName,
-          url: entry.url
-        })
-      })
-
-      // First Input Delay (FID)
-      this.observeMetric('first-input', (entry) => {
-        this.recordMetric('FID', entry.processingStart - entry.startTime, {
-          eventType: entry.name,
-          target: entry.target?.tagName
-        })
-      })
-
-      // Cumulative Layout Shift (CLS)
-      this.observeMetric('layout-shift', (entry) => {
-        if (!(entry as any).hadRecentInput) {
-          this.recordMetric('CLS', (entry as any).value, {
-            sources: (entry as any).sources?.length || 0
-          })
-        }
-      })
-    }
-  }
-
-  private observeMetric(type: string, callback: (entry: PerformanceEntry) => void) {
-    try {
-      const observer = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          callback(entry)
-        }
-      })
-      observer.observe({ type, buffered: true })
-      this.observers.push(observer)
-    } catch (error) {
-      console.warn(`Failed to observe ${type}:`, error)
-    }
-  }
-
-  private initializeCustomMetrics() {
-    // Track page load time
-    if (typeof window !== 'undefined') {
-      window.addEventListener('load', () => {
-        const loadTime = performance.now()
-        this.recordMetric('PageLoad', loadTime)
-      })
-
-      // Track route changes (for SPA)
-      let navigationStart = performance.now()
-      window.addEventListener('beforeunload', () => {
-        const navigationTime = performance.now() - navigationStart
-        this.recordMetric('NavigationTime', navigationTime)
-      })
-
-      // Track memory usage (if available)
-      if ('memory' in performance) {
-        setInterval(() => {
-          const memory = (performance as any).memory
-          this.recordMetric('MemoryUsage', memory.usedJSHeapSize, {
-            total: memory.totalJSHeapSize,
-            limit: memory.jsHeapSizeLimit
-          })
-        }, 30000) // Every 30 seconds
-      }
-    }
-  }
-
-  recordMetric(name: string, value: number, metadata?: Record<string, any>) {
-    const metric: CustomMetric = {
-      name,
-      value,
-      timestamp: Date.now(),
-      metadata
-    }
-
-    this.metrics.push(metric)
-
-    // Send to analytics (PostHog, Google Analytics, etc.)
-    this.sendToAnalytics(metric)
-
-    // Keep only last 100 metrics in memory
-    if (this.metrics.length > 100) {
-      this.metrics = this.metrics.slice(-100)
-    }
-  }
-
-  private sendToAnalytics(metric: CustomMetric) {
-    // Send to PostHog
-    if (typeof window !== 'undefined' && (window as any).posthog) {
-      (window as any).posthog.capture('performance_metric', {
-        metric_name: metric.name,
-        metric_value: metric.value,
-        timestamp: metric.timestamp,
-        ...metric.metadata
-      })
-    }
-
-    // Send to Google Analytics 4
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'performance_metric', {
-        metric_name: metric.name,
-        metric_value: metric.value,
-        ...metric.metadata
-      })
-    }
-  }
-
-  // Track custom business metrics
-  trackIdeaCreationTime(timeMs: number) {
-    this.recordMetric('IdeaCreationTime', timeMs)
-  }
-
-  trackImageGenerationTime(timeMs: number, imageCount: number) {
-    this.recordMetric('ImageGenerationTime', timeMs, { imageCount })
-  }
-
-  trackDatabaseQueryTime(queryName: string, timeMs: number) {
-    this.recordMetric('DatabaseQueryTime', timeMs, { queryName })
-  }
-
-  trackAPIResponseTime(endpoint: string, timeMs: number, statusCode: number) {
-    this.recordMetric('APIResponseTime', timeMs, { endpoint, statusCode })
-  }
-
-  trackUserInteraction(action: string, timeMs: number, element?: string) {
-    this.recordMetric('UserInteraction', timeMs, { action, element })
-  }
-
-  // Get performance summary
-  getPerformanceSummary() {
-    const summary = {
-      totalMetrics: this.metrics.length,
-      averageLoadTime: this.getAverageMetric('PageLoad'),
-      averageLCP: this.getAverageMetric('LCP'),
-      averageFID: this.getAverageMetric('FID'),
-      averageCLS: this.getAverageMetric('CLS'),
-      memoryUsage: this.getLatestMetric('MemoryUsage')?.value,
-      recentMetrics: this.metrics.slice(-10)
-    }
-
-    return summary
-  }
-
-  private getAverageMetric(name: string): number {
-    const metrics = this.metrics.filter(m => m.name === name)
-    if (metrics.length === 0) return 0
-    return metrics.reduce((sum, m) => sum + m.value, 0) / metrics.length
-  }
-
-  private getLatestMetric(name: string): CustomMetric | undefined {
-    return this.metrics
-      .filter(m => m.name === name)
-      .sort((a, b) => b.timestamp - a.timestamp)[0]
-  }
-
-  // Cleanup
-  disconnect() {
-    this.observers.forEach(observer => observer.disconnect())
-    this.observers = []
-  }
-}
-
-// Singleton instance
-export const performanceMonitor = new PerformanceMonitor()
-
-// React hook for performance tracking
-export function usePerformanceTracking() {
-  const trackTiming = (name: string, fn: () => void | Promise<void>) => {
-    const start = performance.now()
-    
-    const result = fn()
-    
-    if (result instanceof Promise) {
-      return result.finally(() => {
-        const end = performance.now()
-        performanceMonitor.recordMetric(name, end - start)
-      })
+  useEffect(() => {
+    if (Date.now() >= lastExecuted.current + delay) {
+      lastExecuted.current = Date.now()
+      setThrottledValue(value)
     } else {
-      const end = performance.now()
-      performanceMonitor.recordMetric(name, end - start)
-      return result
-    }
-  }
+      const timer = setTimeout(() => {
+        lastExecuted.current = Date.now()
+        setThrottledValue(value)
+      }, delay)
 
-  const trackAsyncTiming = async (name: string, fn: () => Promise<any>) => {
-    const start = performance.now()
-    try {
-      const result = await fn()
-      return result
-    } finally {
-      const end = performance.now()
-      performanceMonitor.recordMetric(name, end - start)
+      return () => clearTimeout(timer)
     }
-  }
+  }, [value, delay])
+
+  return throttledValue
+}
+
+// Intersection Observer hook for lazy loading
+export function useIntersectionObserver(
+  options: IntersectionObserverInit = {}
+) {
+  const [isIntersecting, setIsIntersecting] = useState(false)
+  const [hasIntersected, setHasIntersected] = useState(false)
+  const ref = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const element = ref.current
+    if (!element) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsIntersecting(entry.isIntersecting)
+        if (entry.isIntersecting && !hasIntersected) {
+          setHasIntersected(true)
+        }
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '50px',
+        ...options
+      }
+    )
+
+    observer.observe(element)
+
+    return () => {
+      observer.unobserve(element)
+    }
+  }, [options, hasIntersected])
+
+  return { ref, isIntersecting, hasIntersected }
+}
+
+// Virtual scrolling hook
+export function useVirtualScroll<T>(
+  items: T[],
+  itemHeight: number,
+  containerHeight: number,
+  overscan: number = 5
+) {
+  const [scrollTop, setScrollTop] = useState(0)
+
+  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan)
+  const endIndex = Math.min(
+    items.length - 1,
+    Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
+  )
+
+  const visibleItems = items.slice(startIndex, endIndex + 1).map((item, index) => ({
+    item,
+    index: startIndex + index
+  }))
+
+  const totalHeight = items.length * itemHeight
+  const offsetY = startIndex * itemHeight
 
   return {
-    trackTiming,
-    trackAsyncTiming,
-    recordMetric: performanceMonitor.recordMetric.bind(performanceMonitor),
-    getSummary: performanceMonitor.getPerformanceSummary.bind(performanceMonitor)
+    visibleItems,
+    totalHeight,
+    offsetY,
+    setScrollTop
   }
+}
+
+// Image lazy loading hook
+export function useLazyImage(src: string, placeholder?: string) {
+  const [imageSrc, setImageSrc] = useState(placeholder || '')
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
+  const { ref, hasIntersected } = useIntersectionObserver()
+
+  useEffect(() => {
+    if (hasIntersected && src) {
+      const img = new Image()
+      img.onload = () => {
+        setImageSrc(src)
+        setIsLoading(false)
+      }
+      img.onerror = () => {
+        setHasError(true)
+        setIsLoading(false)
+      }
+      img.src = src
+    }
+  }, [hasIntersected, src])
+
+  return { ref, imageSrc, isLoading, hasError }
+}
+
+// Performance monitoring hook
+export function usePerformanceMonitor(componentName: string) {
+  const renderStart = useRef<number>(0)
+  const [renderTime, setRenderTime] = useState<number>(0)
+
+  useEffect(() => {
+    renderStart.current = performance.now()
+    
+    return () => {
+      const renderEnd = performance.now()
+      const duration = renderEnd - renderStart.current
+      setRenderTime(duration)
+      
+      if (duration > 16) { // More than one frame at 60fps
+        console.warn(`${componentName} render took ${duration.toFixed(2)}ms`)
+      }
+    }
+  }, [componentName])
+
+  return { renderTime }
+}
+
+// Memory usage monitoring
+export function useMemoryMonitor() {
+  const [memoryInfo, setMemoryInfo] = useState<{
+    usedJSHeapSize: number
+    totalJSHeapSize: number
+    jsHeapSizeLimit: number
+  } | null>(null)
+
+  useEffect(() => {
+    const updateMemoryInfo = () => {
+      if ('memory' in performance) {
+        const memory = (performance as any).memory
+        setMemoryInfo({
+          usedJSHeapSize: memory.usedJSHeapSize,
+          totalJSHeapSize: memory.totalJSHeapSize,
+          jsHeapSizeLimit: memory.jsHeapSizeLimit
+        })
+      }
+    }
+
+    updateMemoryInfo()
+    const interval = setInterval(updateMemoryInfo, 5000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  return memoryInfo
+}
+
+// Bundle size analyzer
+export function useBundleAnalyzer() {
+  const [bundleSize, setBundleSize] = useState<number>(0)
+
+  useEffect(() => {
+    // This would typically be done at build time
+    // For now, we'll estimate based on loaded resources
+    const scripts = document.querySelectorAll('script[src]')
+    let totalSize = 0
+
+    scripts.forEach(script => {
+      const src = script.getAttribute('src')
+      if (src && src.includes('_next/static')) {
+        // Estimate size based on script name patterns
+        totalSize += 100000 // Rough estimate
+      }
+    })
+
+    setBundleSize(totalSize)
+  }, [])
+
+  return bundleSize
+}
+
+// Network performance monitoring
+export function useNetworkMonitor() {
+  const [connectionInfo, setConnectionInfo] = useState<{
+    effectiveType: string
+    downlink: number
+    rtt: number
+  } | null>(null)
+
+  useEffect(() => {
+    if ('connection' in navigator) {
+      const connection = (navigator as any).connection
+      setConnectionInfo({
+        effectiveType: connection.effectiveType,
+        downlink: connection.downlink,
+        rtt: connection.rtt
+      })
+
+      const updateConnection = () => {
+        setConnectionInfo({
+          effectiveType: connection.effectiveType,
+          downlink: connection.downlink,
+          rtt: connection.rtt
+        })
+      }
+
+      connection.addEventListener('change', updateConnection)
+      return () => connection.removeEventListener('change', updateConnection)
+    }
+  }, [])
+
+  return connectionInfo
+}
+
+// Resource preloading utilities
+export function preloadImage(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve()
+    img.onerror = reject
+    img.src = src
+  })
+}
+
+export function preloadFont(fontFamily: string, src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const font = new FontFace(fontFamily, `url(${src})`)
+    font.load().then(() => {
+      document.fonts.add(font)
+      resolve()
+    }).catch(reject)
+  })
+}
+
+// Code splitting utilities
+export function createLazyComponent<T extends React.ComponentType<any>>(
+  importFunc: () => Promise<{ default: T }>,
+  fallback?: React.ComponentType
+) {
+  return React.lazy(importFunc)
+}
+
+// Memoization utilities
+export function memoize<T extends (...args: any[]) => any>(
+  fn: T,
+  keyGenerator?: (...args: Parameters<T>) => string
+): T {
+  const cache = new Map<string, ReturnType<T>>()
+
+  return ((...args: Parameters<T>) => {
+    const key = keyGenerator ? keyGenerator(...args) : JSON.stringify(args)
+    
+    if (cache.has(key)) {
+      return cache.get(key)
+    }
+
+    const result = fn(...args)
+    cache.set(key, result)
+    return result
+  }) as T
+}
+
+// Cache management
+export class CacheManager {
+  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>()
+
+  set(key: string, data: any, ttl: number = 300000) { // 5 minutes default
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl
+    })
+  }
+
+  get(key: string): any | null {
+    const item = this.cache.get(key)
+    if (!item) return null
+
+    if (Date.now() - item.timestamp > item.ttl) {
+      this.cache.delete(key)
+      return null
+    }
+
+    return item.data
+  }
+
+  clear() {
+    this.cache.clear()
+  }
+
+  size() {
+    return this.cache.size
+  }
+}
+
+// Global cache instance
+export const globalCache = new CacheManager()
+
+// Performance metrics collection
+export function collectPerformanceMetrics() {
+  const metrics = {
+    navigation: performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming,
+    paint: performance.getEntriesByType('paint'),
+    resource: performance.getEntriesByType('resource'),
+    memory: (performance as any).memory,
+    connection: (navigator as any).connection
+  }
+
+  return metrics
+}
+
+// Web Vitals collection
+export function collectWebVitals() {
+  const vitals = {
+    FCP: 0, // First Contentful Paint
+    LCP: 0, // Largest Contentful Paint
+    FID: 0, // First Input Delay
+    CLS: 0, // Cumulative Layout Shift
+    TTFB: 0  // Time to First Byte
+  }
+
+  // This would typically use web-vitals library
+  // For now, we'll provide a basic implementation
+  const observer = new PerformanceObserver((list) => {
+    for (const entry of list.getEntries()) {
+      if (entry.entryType === 'paint') {
+        if (entry.name === 'first-contentful-paint') {
+          vitals.FCP = entry.startTime
+        }
+      }
+    }
+  })
+
+  observer.observe({ entryTypes: ['paint'] })
+
+  return vitals
+}
+
+// Image optimization utilities
+export function getOptimizedImageUrl(
+  src: string,
+  width?: number,
+  height?: number,
+  quality: number = 80
+): string {
+  // This would integrate with your image optimization service
+  // For now, we'll return the original src
+  const params = new URLSearchParams()
+  if (width) params.set('w', width.toString())
+  if (height) params.set('h', height.toString())
+  params.set('q', quality.toString())
+
+  return `${src}?${params.toString()}`
+}
+
+// Critical resource hints
+export function addResourceHints() {
+  const hints = [
+    { rel: 'preconnect', href: 'https://images.unsplash.com' },
+    { rel: 'dns-prefetch', href: 'https://api.unsplash.com' },
+    { rel: 'preload', href: '/fonts/inter.woff2', as: 'font', type: 'font/woff2', crossOrigin: 'anonymous' }
+  ]
+
+  hints.forEach(hint => {
+    const link = document.createElement('link')
+    Object.entries(hint).forEach(([key, value]) => {
+      link.setAttribute(key, value)
+    })
+    document.head.appendChild(link)
+  })
 }

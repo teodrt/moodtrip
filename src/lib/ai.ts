@@ -1,11 +1,5 @@
-import OpenAI from 'openai'
 import { createApi } from 'unsplash-js'
 import { Vibrant } from 'node-vibrant/node'
-
-// Initialize clients
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
 
 const unsplash = createApi({
   accessKey: process.env.UNSPLASH_ACCESS_KEY || ''
@@ -595,33 +589,7 @@ function createIntelligentSearchQuery(prompt: string): string {
  */
 export async function generateImages(prompt: string): Promise<ImageResult> {
   try {
-    // Try OpenAI Images first
-    if (process.env.OPENAI_API_KEY) {
-      try {
-        const response = await openai.images.generate({
-          model: 'dall-e-3',
-          prompt: prompt,
-          n: 4,
-          size: '1024x1024',
-          quality: 'standard'
-        })
-
-        const urls = response.data
-          ?.filter(img => img.url)
-          .map(img => img.url!)
-          .slice(0, 4) || []
-
-        if (urls.length > 0) {
-          return {
-            urls,
-            provider: 'OpenAI DALL-E 3',
-            source: 'AI'
-          }
-        }
-      } catch (error) {
-        console.warn('OpenAI Images failed, trying Stability AI:', error)
-      }
-    }
+    // Skip AI image generation - no API keys configured
 
     // TODO: Add Stability AI integration when API is properly configured
     // For now, skip directly to Unsplash fallback
@@ -708,31 +676,8 @@ export async function generateImages(prompt: string): Promise<ImageResult> {
  */
 export async function generateSummary(prompt: string): Promise<string> {
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      console.warn('OpenAI API key not available, returning mock summary')
-      return generateMockSummary(prompt)
-    }
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a travel expert who creates evocative, inspiring summaries of travel ideas. 
-          Write a 2-3 sentence summary that captures the essence and appeal of the travel experience. 
-          Focus on the emotional journey, unique experiences, and what makes this destination special. 
-          Use vivid, descriptive language that would inspire someone to visit.`
-        },
-        {
-          role: 'user',
-          content: `Create a compelling travel summary for this idea: ${prompt}`
-        }
-      ],
-      max_tokens: 150,
-      temperature: 0.7
-    })
-
-    return response.choices[0]?.message?.content?.trim() || generateMockSummary(prompt)
+    console.warn('OpenAI API key not available, returning mock summary')
+    return generateMockSummary(prompt)
   } catch (error) {
     console.error('Error generating summary:', error)
     return generateMockSummary(prompt)
@@ -746,13 +691,18 @@ export async function generateSummary(prompt: string): Promise<string> {
  */
 export async function extractPalette(urls: string[]): Promise<string[]> {
   try {
+    if (!urls || !Array.isArray(urls) || urls.length === 0) {
+      console.warn('extractPalette: Invalid or empty urls array')
+      return []
+    }
+    
     const palettes: string[] = []
     
     for (const url of urls.slice(0, 3)) { // Process up to 3 images
       try {
         // Convert local URLs to absolute URLs for Vibrant
         const absoluteUrl = url.startsWith('/') 
-          ? `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001'}${url}`
+          ? `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3015'}${url}`
           : url
           
         const palette = await Vibrant.from(absoluteUrl).getPalette()
@@ -795,34 +745,6 @@ export async function extractPalette(urls: string[]): Promise<string[]> {
  */
 export async function generateTags(prompt: string): Promise<string[]> {
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      return generateMockTags(prompt)
-    }
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a travel expert who extracts relevant tags from travel descriptions. 
-          Return 3-5 short, descriptive tags that capture the key aspects of the travel idea. 
-          Focus on: destination type, activities, budget level, travel style, and unique features. 
-          Return only the tags, separated by commas, no other text.`
-        },
-        {
-          role: 'user',
-          content: `Extract tags from this travel idea: ${prompt}`
-        }
-      ],
-      max_tokens: 50,
-      temperature: 0.3
-    })
-
-    const tags = response.choices[0]?.message?.content?.trim()
-    if (tags) {
-      return tags.split(',').map(tag => tag.trim().toLowerCase()).filter(Boolean)
-    }
-
     return generateMockTags(prompt)
   } catch (error) {
     console.error('Error generating tags:', error)

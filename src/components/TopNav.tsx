@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSession, signOut } from 'next-auth/react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -32,7 +33,6 @@ import {
   Users,
   Sparkles
 } from 'lucide-react'
-import { AuthButton } from './AuthButton'
 
 interface TopNavProps {
   currentGroup?: string
@@ -43,15 +43,8 @@ export function TopNav({ currentGroup, groups = [] }: TopNavProps) {
   const pathname = usePathname()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   
-  // Mock user data - in real app this would come from auth context
-  const user = {
-    name: 'John Doe',
-    email: 'john@example.com',
-    avatar: null,
-    isAuthenticated: true
-  }
-
-  const isAuthenticated = user.isAuthenticated
+  const { data: session, status } = useSession()
+  const isAuthenticated = !!session?.user
 
   const handleGroupChange = (newGroupSlug: string) => {
     if (newGroupSlug !== currentGroup) {
@@ -117,7 +110,45 @@ export function TopNav({ currentGroup, groups = [] }: TopNavProps) {
             </Link>
 
             {/* Auth Button */}
-            <AuthButton />
+            {isAuthenticated ? (
+              <DropdownMenu open={isUserMenuOpen} onOpenChange={setIsUserMenuOpen}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-9 px-4 py-2">
+                    <User className="h-4 w-4 mr-2" />
+                    {session?.user?.name || 'User'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {session?.user?.name || 'User'}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {session?.user?.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link href="/login">
+                <Button variant="outline" className="h-9 px-4 py-2">
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Sign In
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
