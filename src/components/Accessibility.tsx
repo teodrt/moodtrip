@@ -106,7 +106,7 @@ export function HighContrastToggle() {
   const [isHighContrast, setIsHighContrast] = useState(false)
 
   useEffect(() => {
-    const saved = localStorage.getItem('highContrast')
+    const saved = localStorage.getItem('accessibility-high-contrast')
     if (saved) {
       setIsHighContrast(JSON.parse(saved))
     }
@@ -118,7 +118,7 @@ export function HighContrastToggle() {
     } else {
       document.documentElement.classList.remove('high-contrast')
     }
-    localStorage.setItem('highContrast', JSON.stringify(isHighContrast))
+    localStorage.setItem('accessibility-high-contrast', JSON.stringify(isHighContrast))
   }, [isHighContrast])
 
   return (
@@ -141,7 +141,7 @@ export function ReducedMotionToggle() {
   const [isReducedMotion, setIsReducedMotion] = useState(false)
 
   useEffect(() => {
-    const saved = localStorage.getItem('reducedMotion')
+    const saved = localStorage.getItem('accessibility-reduced-motion')
     if (saved) {
       setIsReducedMotion(JSON.parse(saved))
     }
@@ -153,7 +153,7 @@ export function ReducedMotionToggle() {
     } else {
       document.documentElement.classList.remove('reduced-motion')
     }
-    localStorage.setItem('reducedMotion', JSON.stringify(isReducedMotion))
+    localStorage.setItem('accessibility-reduced-motion', JSON.stringify(isReducedMotion))
   }, [isReducedMotion])
 
   return (

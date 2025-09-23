@@ -37,8 +37,8 @@ export function IdeaCard({ idea }: IdeaCardProps) {
       whileTap={{ scale: 0.98 }}
       className="group"
     >
-      <Link href={`/i/${idea.id}`} className="block">
-        <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 group-hover:border-gray-200">
+      <Link href={`/i/${idea.id}`} className="block h-full">
+        <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 group-hover:border-gray-200 h-full flex flex-col min-h-[400px]">
           {/* Cover Image */}
           <div className="relative aspect-[4/3] overflow-hidden">
             <img
@@ -50,30 +50,33 @@ export function IdeaCard({ idea }: IdeaCardProps) {
           </div>
 
           {/* Content */}
-          <div className="p-4 space-y-3">
-            {/* Title */}
-            <h3 className="font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors duration-200">
-              {idea.title}
-            </h3>
+          <div className="p-4 flex-1 flex flex-col">
+            {/* Top Content */}
+            <div className="space-y-3 flex-1">
+              {/* Title */}
+              <h3 className="font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors duration-200">
+                {idea.title}
+              </h3>
 
-            {/* Tags and Group Fit */}
-            <div className="flex flex-wrap gap-1.5">
-              {idea.tags.slice(0, 3).map((tag, index) => (
-                <Badge
-                  key={index}
-                  variant="secondary"
-                  className="text-xs px-2 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors duration-200"
-                >
-                  {tag}
-                </Badge>
-              ))}
-              {idea.groupFit && (
-                <GroupFitBadge score={idea.groupFit} />
-              )}
+              {/* Tags and Group Fit */}
+              <div className="flex flex-wrap gap-1.5">
+                {idea.tags.slice(0, 3).map((tag, index) => (
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors duration-200"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+                {idea.groupFit && (
+                  <GroupFitBadge score={idea.groupFit} />
+                )}
+              </div>
             </div>
 
-            {/* Stats and Author */}
-            <div className="flex items-center justify-between pt-2">
+            {/* Stats and Author - Always at bottom */}
+            <div className="flex items-center justify-between pt-4 mt-auto">
               {/* Vote Stats */}
               <div className="flex items-center gap-3 text-xs text-gray-500">
                 <div className="flex items-center gap-1">

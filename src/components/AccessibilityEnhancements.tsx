@@ -207,7 +207,7 @@ export function useHighContrastMode() {
   const [isHighContrast, setIsHighContrast] = useState(false)
 
   useEffect(() => {
-    const saved = localStorage.getItem('high-contrast-mode')
+    const saved = localStorage.getItem('accessibility-high-contrast')
     if (saved) {
       setIsHighContrast(JSON.parse(saved))
     }
@@ -215,7 +215,7 @@ export function useHighContrastMode() {
 
   useEffect(() => {
     document.documentElement.classList.toggle('high-contrast', isHighContrast)
-    localStorage.setItem('high-contrast-mode', JSON.stringify(isHighContrast))
+    localStorage.setItem('accessibility-high-contrast', JSON.stringify(isHighContrast))
   }, [isHighContrast])
 
   const toggleHighContrast = useCallback(() => {
@@ -249,7 +249,7 @@ export function useColorBlindFriendly() {
   const [isColorBlindFriendly, setIsColorBlindFriendly] = useState(false)
 
   useEffect(() => {
-    const saved = localStorage.getItem('color-blind-friendly')
+    const saved = localStorage.getItem('accessibility-color-blind-friendly')
     if (saved) {
       setIsColorBlindFriendly(JSON.parse(saved))
     }
@@ -257,7 +257,7 @@ export function useColorBlindFriendly() {
 
   useEffect(() => {
     document.documentElement.classList.toggle('color-blind-friendly', isColorBlindFriendly)
-    localStorage.setItem('color-blind-friendly', JSON.stringify(isColorBlindFriendly))
+    localStorage.setItem('accessibility-color-blind-friendly', JSON.stringify(isColorBlindFriendly))
   }, [isColorBlindFriendly])
 
   const toggleColorBlindFriendly = useCallback(() => {

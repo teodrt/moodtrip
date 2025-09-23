@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Playfair_Display, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { TopNav } from "@/components/TopNav";
+import { DynamicTopNav } from "@/components/DynamicTopNav";
 import { Providers } from "@/components/Providers";
-import { PerformanceToggle } from "@/components/PerformanceDashboard";
 import { SkipToContent } from "@/components/Accessibility";
 import { ScreenReaderAnnouncements } from "@/components/Accessibility";
 import { KeyboardNavigationIndicator } from "@/components/Accessibility";
@@ -11,14 +10,29 @@ import { AccessibilitySettings } from "@/components/Accessibility";
 import { ToastProvider } from "@/components/ToastSystem";
 // import { ToastProvider } from "@/components/ui/use-toast";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Premium Apple Design Awards-grade typography system
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const playfairDisplay = Playfair_Display({
+  variable: "--font-playfair",
   subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -62,15 +76,14 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900 min-h-screen`}
+        className={`${inter.variable} ${playfairDisplay.variable} ${jetbrainsMono.variable} font-sans antialiased bg-gray-50 text-gray-900 min-h-screen`}
       >
         <Providers>
           <SkipToContent />
           <ScreenReaderAnnouncements />
           <KeyboardNavigationIndicator />
           <div className="min-h-screen bg-gray-50">
-            <TopNav 
-              currentGroup="family"
+            <DynamicTopNav 
               groups={[
                 { slug: 'family', name: 'Family', memberCount: 4 },
                 { slug: 'friends', name: 'Friends', memberCount: 6 },
@@ -81,7 +94,6 @@ export default function RootLayout({
           {children}
         </main>
       </div>
-      <PerformanceToggle />
       <AccessibilitySettings />
       <ToastProvider />
     </Providers>

@@ -5,6 +5,8 @@ const unsplash = createApi({
   accessKey: process.env.UNSPLASH_ACCESS_KEY || ''
 })
 
+console.log('Unsplash client initialized with access key:', process.env.UNSPLASH_ACCESS_KEY ? 'Present' : 'Missing')
+
 // Types
 export type ImageSource = 'AI' | 'STOCK'
 
@@ -21,46 +23,272 @@ export interface ImageResult {
 function createIntelligentSearchQuery(prompt: string): string {
   const promptLower = prompt.toLowerCase()
   
-  // Country/destination mapping
+  // Experience-focused search query generation
+  const isWinter = promptLower.includes('winter') || promptLower.includes('snow') || promptLower.includes('cold') || promptLower.includes('ski') || promptLower.includes('snowboard')
+  const isSummer = promptLower.includes('summer') || promptLower.includes('beach') || promptLower.includes('hot') || promptLower.includes('warm') || promptLower.includes('sunny')
+  const isSpring = promptLower.includes('spring') || promptLower.includes('bloom') || promptLower.includes('flowers')
+  const isAutumn = promptLower.includes('autumn') || promptLower.includes('fall') || promptLower.includes('leaves') || promptLower.includes('harvest')
+  
+  // Social context detection
+  const isFamily = promptLower.includes('family') || promptLower.includes('kids') || promptLower.includes('children')
+  const isFriends = promptLower.includes('friends') || promptLower.includes('group') || promptLower.includes('together')
+  const isRomantic = promptLower.includes('romantic') || promptLower.includes('couple') || promptLower.includes('honeymoon')
+  const isSolo = promptLower.includes('solo') || promptLower.includes('alone') || promptLower.includes('personal')
+  
+  // Experience-focused location mapping
+  const experienceLocationMap: { [key: string]: { [key: string]: string } } = {
+    'switzerland': {
+      'winter': isFamily ? 'family winter switzerland skiing cozy mountain cabin experience' : 
+               isFriends ? 'friends winter switzerland skiing adventure mountain experience' :
+               isRomantic ? 'couple romantic winter switzerland cozy alpine village experience' :
+               'winter switzerland skiing mountain adventure experience people',
+      'summer': isFamily ? 'family summer switzerland hiking mountain lakes experience' :
+               isFriends ? 'friends summer switzerland adventure hiking mountain experience' :
+               isRomantic ? 'couple romantic summer switzerland alpine lakes experience' :
+               'summer switzerland hiking mountain lakes experience people',
+      'spring': isFamily ? 'family spring switzerland alpine meadows flowers experience' :
+               isFriends ? 'friends spring switzerland hiking alpine meadows experience' :
+               isRomantic ? 'couple romantic spring switzerland alpine flowers experience' :
+               'spring switzerland alpine meadows hiking experience people',
+      'autumn': isFamily ? 'family autumn switzerland golden mountains experience' :
+               isFriends ? 'friends autumn switzerland hiking golden mountains experience' :
+               isRomantic ? 'couple romantic autumn switzerland golden alpine experience' :
+               'autumn switzerland golden mountains hiking experience people',
+      'default': 'switzerland mountains alps experience people'
+    },
+    'austria': {
+      'winter': isFamily ? 'family winter austria skiing cozy alpine village experience' :
+               isFriends ? 'friends winter austria skiing adventure mountain experience' :
+               isRomantic ? 'couple romantic winter austria cozy alpine experience' :
+               'winter austria skiing mountain adventure experience people',
+      'summer': isFamily ? 'family summer austria hiking mountain lakes experience' :
+               isFriends ? 'friends summer austria adventure hiking mountain experience' :
+               isRomantic ? 'couple romantic summer austria alpine lakes experience' :
+               'summer austria hiking mountain lakes experience people',
+      'spring': isFamily ? 'family spring austria alpine meadows experience' :
+               isFriends ? 'friends spring austria hiking alpine meadows experience' :
+               isRomantic ? 'couple romantic spring austria alpine flowers experience' :
+               'spring austria alpine meadows hiking experience people',
+      'autumn': isFamily ? 'family autumn austria golden mountains experience' :
+               isFriends ? 'friends autumn austria hiking golden mountains experience' :
+               isRomantic ? 'couple romantic autumn austria golden alpine experience' :
+               'autumn austria golden mountains hiking experience people',
+      'default': 'austria mountains alps experience people'
+    },
+    'norway': {
+      'winter': isFamily ? 'family winter norway northern lights cozy cabin experience' :
+               isFriends ? 'friends winter norway northern lights adventure experience' :
+               isRomantic ? 'couple romantic winter norway northern lights cozy experience' :
+               'winter norway northern lights aurora experience people',
+      'summer': isFamily ? 'family summer norway fjords midnight sun experience' :
+               isFriends ? 'friends summer norway fjords adventure midnight sun experience' :
+               isRomantic ? 'couple romantic summer norway fjords midnight sun experience' :
+               'summer norway fjords midnight sun experience people',
+      'spring': isFamily ? 'family spring norway fjords waterfalls experience' :
+               isFriends ? 'friends spring norway fjords hiking waterfalls experience' :
+               isRomantic ? 'couple romantic spring norway fjords waterfalls experience' :
+               'spring norway fjords waterfalls experience people',
+      'autumn': isFamily ? 'family autumn norway fjords golden colors experience' :
+               isFriends ? 'friends autumn norway fjords hiking golden experience' :
+               isRomantic ? 'couple romantic autumn norway fjords golden experience' :
+               'autumn norway fjords golden colors experience people',
+      'default': 'norway fjords northern lights experience people'
+    },
+    'iceland': {
+      'winter': isFamily ? 'family winter iceland northern lights cozy experience' :
+               isFriends ? 'friends winter iceland northern lights adventure experience' :
+               isRomantic ? 'couple romantic winter iceland northern lights cozy experience' :
+               'winter iceland northern lights aurora experience people',
+      'summer': isFamily ? 'family summer iceland midnight sun waterfalls experience' :
+               isFriends ? 'friends summer iceland adventure midnight sun waterfalls experience' :
+               isRomantic ? 'couple romantic summer iceland midnight sun waterfalls experience' :
+               'summer iceland midnight sun waterfalls experience people',
+      'spring': isFamily ? 'family spring iceland waterfalls geysers experience' :
+               isFriends ? 'friends spring iceland hiking waterfalls geysers experience' :
+               isRomantic ? 'couple romantic spring iceland waterfalls geysers experience' :
+               'spring iceland waterfalls geysers experience people',
+      'autumn': isFamily ? 'family autumn iceland northern lights experience' :
+               isFriends ? 'friends autumn iceland northern lights adventure experience' :
+               isRomantic ? 'couple romantic autumn iceland northern lights experience' :
+               'autumn iceland northern lights experience people',
+      'default': 'iceland northern lights waterfalls experience people'
+    },
+    'japan': {
+      'winter': isFamily ? 'family winter japan skiing mountain experience' :
+               isFriends ? 'friends winter japan skiing adventure mountain experience' :
+               isRomantic ? 'couple romantic winter japan cozy mountain experience' :
+               'winter japan skiing mountain experience people',
+      'summer': isFamily ? 'family summer japan temples gardens experience' :
+               isFriends ? 'friends summer japan temples gardens adventure experience' :
+               isRomantic ? 'couple romantic summer japan temples gardens experience' :
+               'summer japan temples gardens experience people',
+      'spring': isFamily ? 'family spring japan cherry blossoms sakura experience' :
+               isFriends ? 'friends spring japan cherry blossoms sakura experience' :
+               isRomantic ? 'couple romantic spring japan cherry blossoms sakura experience' :
+               'spring japan cherry blossoms sakura experience people',
+      'autumn': isFamily ? 'family autumn japan maple leaves temples experience' :
+               isFriends ? 'friends autumn japan maple leaves temples experience' :
+               isRomantic ? 'couple romantic autumn japan maple leaves temples experience' :
+               'autumn japan maple leaves temples experience people',
+      'default': 'japan temples gardens experience people'
+    },
+    'italy': {
+      'winter': isFamily ? 'family winter italy skiing mountain experience' :
+               isFriends ? 'friends winter italy skiing adventure mountain experience' :
+               isRomantic ? 'couple romantic winter italy cozy mountain experience' :
+               'winter italy skiing mountain experience people',
+      'summer': isFamily ? 'family summer italy coast beaches mediterranean experience' :
+               isFriends ? 'friends summer italy coast beaches mediterranean adventure experience' :
+               isRomantic ? 'couple romantic summer italy coast beaches mediterranean experience' :
+               'summer italy coast beaches mediterranean experience people',
+      'spring': isFamily ? 'family spring italy countryside vineyards experience' :
+               isFriends ? 'friends spring italy countryside vineyards adventure experience' :
+               isRomantic ? 'couple romantic spring italy countryside vineyards experience' :
+               'spring italy countryside vineyards experience people',
+      'autumn': isFamily ? 'family autumn italy countryside harvest experience' :
+               isFriends ? 'friends autumn italy countryside harvest experience' :
+               isRomantic ? 'couple romantic autumn italy countryside harvest experience' :
+               'autumn italy countryside harvest experience people',
+      'default': 'italy countryside coast experience people'
+    },
+    'france': {
+      'winter': isFamily ? 'family winter france skiing mountain experience' :
+               isFriends ? 'friends winter france skiing adventure mountain experience' :
+               isRomantic ? 'couple romantic winter france cozy mountain experience' :
+               'winter france skiing mountain experience people',
+      'summer': isFamily ? 'family summer france coast beaches mediterranean experience' :
+               isFriends ? 'friends summer france coast beaches mediterranean adventure experience' :
+               isRomantic ? 'couple romantic summer france coast beaches mediterranean experience' :
+               'summer france coast beaches mediterranean experience people',
+      'spring': isFamily ? 'family spring france countryside vineyards experience' :
+               isFriends ? 'friends spring france countryside vineyards adventure experience' :
+               isRomantic ? 'couple romantic spring france countryside vineyards experience' :
+               'spring france countryside vineyards experience people',
+      'autumn': isFamily ? 'family autumn france countryside harvest experience' :
+               isFriends ? 'friends autumn france countryside harvest experience' :
+               isRomantic ? 'couple romantic autumn france countryside harvest experience' :
+               'autumn france countryside harvest experience people',
+      'default': 'france countryside coast experience people'
+    },
+    'spain': {
+      'winter': isFamily ? 'family winter spain skiing mountain experience' :
+               isFriends ? 'friends winter spain skiing adventure mountain experience' :
+               isRomantic ? 'couple romantic winter spain cozy mountain experience' :
+               'winter spain skiing mountain experience people',
+      'summer': isFamily ? 'family summer spain coast beaches mediterranean experience' :
+               isFriends ? 'friends summer spain coast beaches mediterranean adventure experience' :
+               isRomantic ? 'couple romantic summer spain coast beaches mediterranean experience' :
+               'summer spain coast beaches mediterranean experience people',
+      'spring': isFamily ? 'family spring spain countryside experience' :
+               isFriends ? 'friends spring spain countryside adventure experience' :
+               isRomantic ? 'couple romantic spring spain countryside experience' :
+               'spring spain countryside experience people',
+      'autumn': isFamily ? 'family autumn spain countryside experience' :
+               isFriends ? 'friends autumn spain countryside experience' :
+               isRomantic ? 'couple romantic autumn spain countryside experience' :
+               'autumn spain countryside experience people',
+      'default': 'spain coast countryside experience people'
+    },
+    'greece': {
+      'winter': isFamily ? 'family winter greece mountain experience' :
+               isFriends ? 'friends winter greece mountain adventure experience' :
+               isRomantic ? 'couple romantic winter greece cozy mountain experience' :
+               'winter greece mountain experience people',
+      'summer': isFamily ? 'family summer greece islands beaches mediterranean experience' :
+               isFriends ? 'friends summer greece islands beaches mediterranean adventure experience' :
+               isRomantic ? 'couple romantic summer greece islands beaches mediterranean experience' :
+               'summer greece islands beaches mediterranean experience people',
+      'spring': isFamily ? 'family spring greece islands experience' :
+               isFriends ? 'friends spring greece islands adventure experience' :
+               isRomantic ? 'couple romantic spring greece islands experience' :
+               'spring greece islands experience people',
+      'autumn': isFamily ? 'family autumn greece islands experience' :
+               isFriends ? 'friends autumn greece islands experience' :
+               isRomantic ? 'couple romantic autumn greece islands experience' :
+               'autumn greece islands experience people',
+      'default': 'greece islands mediterranean experience people'
+    }
+  }
+  
+  // Experience-focused country mapping
   const countryMap: { [key: string]: string } = {
-    'mexico': 'mexico beach resort',
-    'italy': 'italy travel destination',
-    'france': 'france travel destination',
-    'spain': 'spain travel destination',
-    'greece': 'greece travel destination',
-    'japan': 'japan travel destination',
-    'thailand': 'thailand travel destination',
-    'bali': 'bali indonesia travel',
-    'hawaii': 'hawaii beach vacation',
-    'costa rica': 'costa rica travel',
-    'portugal': 'portugal travel destination',
-    'croatia': 'croatia travel destination',
-    'turkey': 'turkey travel destination',
-    'morocco': 'morocco travel destination',
-    'peru': 'peru travel destination',
-    'brazil': 'brazil travel destination',
-    'argentina': 'argentina travel destination',
-    'chile': 'chile travel destination',
-    'iceland': 'iceland travel destination',
-    'norway': 'norway travel destination',
-    'switzerland': 'switzerland travel destination',
-    'austria': 'austria travel destination',
-    'germany': 'germany travel destination',
-    'netherlands': 'netherlands travel destination',
-    'belgium': 'belgium travel destination',
-    'ireland': 'ireland travel destination',
-    'scotland': 'scotland travel destination',
-    'england': 'england travel destination',
-    'wales': 'wales travel destination',
-    'australia': 'australia travel destination',
-    'new zealand': 'new zealand travel destination',
-    'south africa': 'south africa travel destination',
-    'egypt': 'egypt travel destination',
-    'india': 'india travel destination',
-    'china': 'china travel destination',
-    'south korea': 'south korea travel destination',
-    'vietnam': 'vietnam travel destination',
-    'cambodia': 'cambodia travel destination',
+    'mexico': isFamily ? 'family mexico beach resort summer experience' :
+             isFriends ? 'friends mexico beach resort summer adventure experience' :
+             isRomantic ? 'couple romantic mexico beach resort summer experience' :
+             isSummer ? 'mexico beach resort summer experience people' : 'mexico travel destination experience people',
+    'italy': experienceLocationMap['italy']?.[isWinter ? 'winter' : isSummer ? 'summer' : isSpring ? 'spring' : isAutumn ? 'autumn' : 'default'] || 'italy travel destination experience people',
+    'france': experienceLocationMap['france']?.[isWinter ? 'winter' : isSummer ? 'summer' : isSpring ? 'spring' : isAutumn ? 'autumn' : 'default'] || 'france travel destination experience people',
+    'spain': experienceLocationMap['spain']?.[isWinter ? 'winter' : isSummer ? 'summer' : isSpring ? 'spring' : isAutumn ? 'autumn' : 'default'] || 'spain travel destination experience people',
+    'greece': experienceLocationMap['greece']?.[isWinter ? 'winter' : isSummer ? 'summer' : isSpring ? 'spring' : isAutumn ? 'autumn' : 'default'] || 'greece travel destination experience people',
+    'japan': experienceLocationMap['japan']?.[isWinter ? 'winter' : isSummer ? 'summer' : isSpring ? 'spring' : isAutumn ? 'autumn' : 'default'] || 'japan travel destination experience people',
+    'thailand': isFamily ? 'family thailand beach tropical summer experience' :
+               isFriends ? 'friends thailand beach tropical summer adventure experience' :
+               isRomantic ? 'couple romantic thailand beach tropical summer experience' :
+               isSummer ? 'thailand beach tropical summer experience people' : 'thailand travel destination experience people',
+    'bali': isFamily ? 'family bali indonesia beach tropical summer experience' :
+           isFriends ? 'friends bali indonesia beach tropical summer adventure experience' :
+           isRomantic ? 'couple romantic bali indonesia beach tropical summer experience' :
+           isSummer ? 'bali indonesia beach tropical summer experience people' : 'bali indonesia travel experience people',
+    'hawaii': isFamily ? 'family hawaii beach vacation summer tropical experience' :
+             isFriends ? 'friends hawaii beach vacation summer tropical adventure experience' :
+             isRomantic ? 'couple romantic hawaii beach vacation summer tropical experience' :
+             isSummer ? 'hawaii beach vacation summer tropical experience people' : 'hawaii beach vacation experience people',
+    'costa rica': isFamily ? 'family costa rica beach tropical summer experience' :
+                 isFriends ? 'friends costa rica beach tropical summer adventure experience' :
+                 isRomantic ? 'couple romantic costa rica beach tropical summer experience' :
+                 isSummer ? 'costa rica beach tropical summer experience people' : 'costa rica travel experience people',
+    'portugal': isFamily ? 'family portugal coast beaches summer experience' :
+               isFriends ? 'friends portugal coast beaches summer adventure experience' :
+               isRomantic ? 'couple romantic portugal coast beaches summer experience' :
+               isSummer ? 'portugal coast beaches summer experience people' : 'portugal travel destination experience people',
+    'croatia': isFamily ? 'family croatia coast beaches summer experience' :
+              isFriends ? 'friends croatia coast beaches summer adventure experience' :
+              isRomantic ? 'couple romantic croatia coast beaches summer experience' :
+              isSummer ? 'croatia coast beaches summer experience people' : 'croatia travel destination experience people',
+    'turkey': isFamily ? 'family turkey coast beaches summer experience' :
+             isFriends ? 'friends turkey coast beaches summer adventure experience' :
+             isRomantic ? 'couple romantic turkey coast beaches summer experience' :
+             isSummer ? 'turkey coast beaches summer experience people' : 'turkey travel destination experience people',
+    'morocco': isFamily ? 'family morocco desert summer experience' :
+              isFriends ? 'friends morocco desert summer adventure experience' :
+              isRomantic ? 'couple romantic morocco desert summer experience' :
+              isSummer ? 'morocco desert summer experience people' : 'morocco travel destination experience people',
+    'peru': isFamily ? 'family peru mountains summer experience' :
+           isFriends ? 'friends peru mountains summer adventure experience' :
+           isRomantic ? 'couple romantic peru mountains summer experience' :
+           isSummer ? 'peru mountains summer experience people' : 'peru travel destination experience people',
+    'brazil': isFamily ? 'family brazil beach tropical summer experience' :
+             isFriends ? 'friends brazil beach tropical summer adventure experience' :
+             isRomantic ? 'couple romantic brazil beach tropical summer experience' :
+             isSummer ? 'brazil beach tropical summer experience people' : 'brazil travel destination experience people',
+    'argentina': isFamily ? 'family argentina summer experience' :
+                isFriends ? 'friends argentina summer adventure experience' :
+                isRomantic ? 'couple romantic argentina summer experience' :
+                isSummer ? 'argentina summer experience people' : 'argentina travel destination experience people',
+    'chile': isFamily ? 'family chile summer experience' :
+            isFriends ? 'friends chile summer adventure experience' :
+            isRomantic ? 'couple romantic chile summer experience' :
+            isSummer ? 'chile summer experience people' : 'chile travel destination experience people',
+    'iceland': experienceLocationMap['iceland']?.[isWinter ? 'winter' : isSummer ? 'summer' : isSpring ? 'spring' : isAutumn ? 'autumn' : 'default'] || 'iceland travel destination experience people',
+    'norway': experienceLocationMap['norway']?.[isWinter ? 'winter' : isSummer ? 'summer' : isSpring ? 'spring' : isAutumn ? 'autumn' : 'default'] || 'norway travel destination experience people',
+    'switzerland': experienceLocationMap['switzerland']?.[isWinter ? 'winter' : isSummer ? 'summer' : isSpring ? 'spring' : isAutumn ? 'autumn' : 'default'] || 'switzerland travel destination experience people',
+    'austria': experienceLocationMap['austria']?.[isWinter ? 'winter' : isSummer ? 'summer' : isSpring ? 'spring' : isAutumn ? 'autumn' : 'default'] || 'austria travel destination experience people',
+    'germany': isWinter ? 'germany winter snow christmas' : isSummer ? 'germany summer countryside' : 'germany travel destination',
+    'netherlands': isSpring ? 'netherlands spring tulips flowers' : isSummer ? 'netherlands summer canals' : 'netherlands travel destination',
+    'belgium': isWinter ? 'belgium winter christmas' : isSummer ? 'belgium summer' : 'belgium travel destination',
+    'ireland': isSummer ? 'ireland summer green countryside' : isWinter ? 'ireland winter' : 'ireland travel destination',
+    'scotland': isSummer ? 'scotland summer highlands' : isWinter ? 'scotland winter' : 'scotland travel destination',
+    'england': isSummer ? 'england summer countryside' : isWinter ? 'england winter' : 'england travel destination',
+    'wales': isSummer ? 'wales summer countryside' : isWinter ? 'wales winter' : 'wales travel destination',
+    'australia': isSummer ? 'australia summer beach' : isWinter ? 'australia winter' : 'australia travel destination',
+    'new zealand': isSummer ? 'new zealand summer mountains' : isWinter ? 'new zealand winter mountains' : 'new zealand travel destination',
+    'south africa': isSummer ? 'south africa summer safari' : isWinter ? 'south africa winter' : 'south africa travel destination',
+    'egypt': isSummer ? 'egypt summer desert' : isWinter ? 'egypt winter' : 'egypt travel destination',
+    'india': isSummer ? 'india summer' : isWinter ? 'india winter' : 'india travel destination',
+    'china': isSummer ? 'china summer' : isWinter ? 'china winter' : 'china travel destination',
+    'south korea': isSpring ? 'south korea spring cherry blossoms' : isSummer ? 'south korea summer' : isAutumn ? 'south korea autumn' : isWinter ? 'south korea winter' : 'south korea travel destination',
+    'vietnam': isSummer ? 'vietnam summer tropical' : isWinter ? 'vietnam winter' : 'vietnam travel destination',
+    'cambodia': isSummer ? 'cambodia summer tropical' : isWinter ? 'cambodia winter' : 'cambodia travel destination',
     'laos': 'laos travel destination',
     'myanmar': 'myanmar travel destination',
     'malaysia': 'malaysia travel destination',
@@ -218,103 +446,102 @@ function createIntelligentSearchQuery(prompt: string): string {
     'saint-prix': 'saint prix france travel'
   }
 
-  // Activity mapping
+  // Season-aware activity mapping
   const activityMap: { [key: string]: string } = {
-    'beach': 'beach vacation resort',
-    'mountain': 'mountain hiking adventure',
-    'hiking': 'mountain hiking adventure',
-    'skiing': 'skiing winter sports',
-    'snowboarding': 'skiing winter sports',
-    'diving': 'scuba diving underwater',
-    'snorkeling': 'snorkeling beach underwater',
-    'surfing': 'surfing beach ocean',
-    'kayaking': 'kayaking water sports',
-    'sailing': 'sailing boat ocean',
-    'fishing': 'fishing water sports',
-    'camping': 'camping outdoor nature',
-    'hiking': 'hiking mountain nature',
-    'climbing': 'rock climbing adventure',
-    'biking': 'cycling bike tour',
-    'cycling': 'cycling bike tour',
-    'walking': 'walking tour city',
-    'sightseeing': 'sightseeing city tour',
+    'beach': isWinter ? 'beach winter cold' : isSummer ? 'beach summer tropical' : 'beach vacation resort',
+    'mountain': isWinter ? 'mountain winter snow skiing' : isSummer ? 'mountain summer hiking' : 'mountain hiking adventure',
+    'hiking': isWinter ? 'hiking winter snow' : isSummer ? 'hiking summer nature' : 'hiking mountain nature',
+    'skiing': 'skiing winter sports snow mountains',
+    'snowboarding': 'snowboarding winter sports snow mountains',
+    'diving': isSummer ? 'scuba diving summer underwater' : 'scuba diving underwater',
+    'snorkeling': isSummer ? 'snorkeling summer beach underwater' : 'snorkeling beach underwater',
+    'surfing': isSummer ? 'surfing summer beach ocean' : 'surfing beach ocean',
+    'kayaking': isSummer ? 'kayaking summer water sports' : 'kayaking water sports',
+    'sailing': isSummer ? 'sailing summer boat ocean' : 'sailing boat ocean',
+    'fishing': isSummer ? 'fishing summer water sports' : 'fishing water sports',
+    'camping': isWinter ? 'camping winter snow' : isSummer ? 'camping summer outdoor' : 'camping outdoor nature',
+    'climbing': isWinter ? 'climbing winter ice' : isSummer ? 'climbing summer rock' : 'rock climbing adventure',
+    'biking': isWinter ? 'biking winter' : isSummer ? 'biking summer countryside' : 'cycling bike tour',
+    'cycling': isWinter ? 'cycling winter' : isSummer ? 'cycling summer countryside' : 'cycling bike tour',
+    'walking': isWinter ? 'walking winter city' : isSummer ? 'walking summer city' : 'walking tour city',
+    'sightseeing': isWinter ? 'sightseeing winter city' : isSummer ? 'sightseeing summer city' : 'sightseeing city tour',
     'culture': 'cultural travel destination',
     'history': 'historical travel destination',
     'art': 'art museum cultural',
     'museum': 'museum cultural travel',
-    'food': 'food travel culinary',
-    'culinary': 'food travel culinary',
-    'wine': 'wine tasting travel',
-    'tasting': 'wine tasting travel',
-    'shopping': 'shopping city travel',
-    'nightlife': 'nightlife city travel',
-    'party': 'nightlife party travel',
-    'relaxation': 'relaxation spa travel',
-    'spa': 'spa relaxation travel',
-    'wellness': 'wellness spa travel',
-    'yoga': 'yoga wellness travel',
-    'meditation': 'meditation wellness travel',
-    'photography': 'photography travel destination',
-    'wildlife': 'wildlife nature travel',
-    'safari': 'safari wildlife travel',
-    'jungle': 'jungle nature travel',
-    'desert': 'desert travel destination',
-    'ocean': 'ocean beach travel',
-    'lake': 'lake nature travel',
-    'river': 'river nature travel',
-    'waterfall': 'waterfall nature travel',
-    'volcano': 'volcano nature travel',
-    'cave': 'cave nature travel',
-    'island': 'island beach travel',
-    'coast': 'coastal travel destination',
-    'seaside': 'seaside beach travel',
-    'tropical': 'tropical beach travel',
-    'caribbean': 'caribbean beach travel',
-    'mediterranean': 'mediterranean travel destination',
-    'alpine': 'alpine mountain travel',
-    'arctic': 'arctic travel destination',
-    'tundra': 'tundra travel destination',
-    'forest': 'forest nature travel',
-    'national park': 'national park nature travel',
-    'reserve': 'nature reserve travel',
-    'sanctuary': 'wildlife sanctuary travel',
-    'conservation': 'wildlife conservation travel',
-    'eco': 'eco travel sustainable',
-    'sustainable': 'sustainable eco travel',
-    'green': 'green eco travel',
-    'organic': 'organic food travel',
-    'local': 'local culture travel',
-    'authentic': 'authentic local travel',
-    'traditional': 'traditional culture travel',
-    'modern': 'modern city travel',
-    'urban': 'urban city travel',
-    'rural': 'rural countryside travel',
-    'countryside': 'countryside rural travel',
-    'village': 'village rural travel',
-    'town': 'town travel destination',
-    'city': 'city travel destination',
-    'metropolis': 'metropolis city travel',
-    'capital': 'capital city travel',
-    'port': 'port city travel',
-    'harbor': 'harbor port travel',
-    'marina': 'marina port travel',
-    'pier': 'pier harbor travel',
-    'boardwalk': 'boardwalk beach travel',
-    'promenade': 'promenade beach travel',
-    'boulevard': 'boulevard city travel',
-    'avenue': 'avenue city travel',
-    'street': 'street city travel',
-    'square': 'square city travel',
-    'plaza': 'plaza city travel',
-    'market': 'market city travel',
-    'bazaar': 'bazaar market travel',
-    'souq': 'souq market travel',
-    'boutique': 'boutique shopping travel',
-    'gallery': 'gallery art travel',
-    'exhibition': 'exhibition art travel',
-    'festival': 'festival cultural travel',
-    'celebration': 'celebration cultural travel',
-    'ceremony': 'ceremony cultural travel',
+    'food': isWinter ? 'food winter warm' : isSummer ? 'food summer fresh' : 'food travel culinary',
+    'culinary': isWinter ? 'culinary winter warm' : isSummer ? 'culinary summer fresh' : 'food travel culinary',
+    'wine': isWinter ? 'wine winter warm' : isSummer ? 'wine summer fresh' : 'wine tasting travel',
+    'tasting': isWinter ? 'tasting winter warm' : isSummer ? 'tasting summer fresh' : 'wine tasting travel',
+    'shopping': isWinter ? 'shopping winter city' : isSummer ? 'shopping summer city' : 'shopping city travel',
+    'nightlife': isWinter ? 'nightlife winter city' : isSummer ? 'nightlife summer city' : 'nightlife city travel',
+    'party': isWinter ? 'party winter' : isSummer ? 'party summer' : 'nightlife party travel',
+    'relaxation': isWinter ? 'relaxation winter spa' : isSummer ? 'relaxation summer spa' : 'relaxation spa travel',
+    'spa': isWinter ? 'spa winter warm' : isSummer ? 'spa summer fresh' : 'spa relaxation travel',
+    'wellness': isWinter ? 'wellness winter' : isSummer ? 'wellness summer' : 'wellness spa travel',
+    'yoga': isWinter ? 'yoga winter indoor' : isSummer ? 'yoga summer outdoor' : 'yoga wellness travel',
+    'meditation': isWinter ? 'meditation winter indoor' : isSummer ? 'meditation summer outdoor' : 'meditation wellness travel',
+    'photography': isWinter ? 'photography winter snow' : isSummer ? 'photography summer nature' : 'photography travel destination',
+    'wildlife': isWinter ? 'wildlife winter' : isSummer ? 'wildlife summer' : 'wildlife nature travel',
+    'safari': isWinter ? 'safari winter' : isSummer ? 'safari summer' : 'safari wildlife travel',
+    'jungle': isWinter ? 'jungle winter' : isSummer ? 'jungle summer' : 'jungle nature travel',
+    'desert': isWinter ? 'desert winter cold' : isSummer ? 'desert summer hot' : 'desert travel destination',
+    'ocean': isWinter ? 'ocean winter cold' : isSummer ? 'ocean summer warm' : 'ocean beach travel',
+    'lake': isWinter ? 'lake winter frozen' : isSummer ? 'lake summer warm' : 'lake nature travel',
+    'river': isWinter ? 'river winter frozen' : isSummer ? 'river summer flowing' : 'river nature travel',
+    'waterfall': isWinter ? 'waterfall winter frozen' : isSummer ? 'waterfall summer flowing' : 'waterfall nature travel',
+    'volcano': isWinter ? 'volcano winter snow' : isSummer ? 'volcano summer' : 'volcano nature travel',
+    'cave': isWinter ? 'cave winter' : isSummer ? 'cave summer' : 'cave nature travel',
+    'island': isWinter ? 'island winter' : isSummer ? 'island summer tropical' : 'island beach travel',
+    'coast': isWinter ? 'coast winter cold' : isSummer ? 'coast summer warm' : 'coastal travel destination',
+    'seaside': isWinter ? 'seaside winter cold' : isSummer ? 'seaside summer warm' : 'seaside beach travel',
+    'tropical': isSummer ? 'tropical summer beach' : 'tropical beach travel',
+    'caribbean': isSummer ? 'caribbean summer beach' : 'caribbean beach travel',
+    'mediterranean': isSummer ? 'mediterranean summer coast' : 'mediterranean travel destination',
+    'alpine': isWinter ? 'alpine winter snow mountains' : isSummer ? 'alpine summer mountains' : 'alpine mountain travel',
+    'arctic': isWinter ? 'arctic winter snow' : 'arctic travel destination',
+    'tundra': isWinter ? 'tundra winter snow' : 'tundra travel destination',
+    'forest': isWinter ? 'forest winter snow' : isSummer ? 'forest summer green' : 'forest nature travel',
+    'national park': isWinter ? 'national park winter snow' : isSummer ? 'national park summer green' : 'national park nature travel',
+    'reserve': isWinter ? 'nature reserve winter' : isSummer ? 'nature reserve summer' : 'nature reserve travel',
+    'sanctuary': isWinter ? 'wildlife sanctuary winter' : isSummer ? 'wildlife sanctuary summer' : 'wildlife sanctuary travel',
+    'conservation': isWinter ? 'wildlife conservation winter' : isSummer ? 'wildlife conservation summer' : 'wildlife conservation travel',
+    'eco': isWinter ? 'eco travel winter sustainable' : isSummer ? 'eco travel summer sustainable' : 'eco travel sustainable',
+    'sustainable': isWinter ? 'sustainable eco travel winter' : isSummer ? 'sustainable eco travel summer' : 'sustainable eco travel',
+    'green': isWinter ? 'green eco travel winter' : isSummer ? 'green eco travel summer' : 'green eco travel',
+    'organic': isWinter ? 'organic food travel winter' : isSummer ? 'organic food travel summer' : 'organic food travel',
+    'local': isWinter ? 'local culture travel winter' : isSummer ? 'local culture travel summer' : 'local culture travel',
+    'authentic': isWinter ? 'authentic local travel winter' : isSummer ? 'authentic local travel summer' : 'authentic local travel',
+    'traditional': isWinter ? 'traditional culture travel winter' : isSummer ? 'traditional culture travel summer' : 'traditional culture travel',
+    'modern': isWinter ? 'modern city travel winter' : isSummer ? 'modern city travel summer' : 'modern city travel',
+    'urban': isWinter ? 'urban city travel winter' : isSummer ? 'urban city travel summer' : 'urban city travel',
+    'rural': isWinter ? 'rural countryside travel winter' : isSummer ? 'rural countryside travel summer' : 'rural countryside travel',
+    'countryside': isWinter ? 'countryside rural travel winter' : isSummer ? 'countryside rural travel summer' : 'countryside rural travel',
+    'village': isWinter ? 'village rural travel winter' : isSummer ? 'village rural travel summer' : 'village rural travel',
+    'town': isWinter ? 'town travel destination winter' : isSummer ? 'town travel destination summer' : 'town travel destination',
+    'city': isWinter ? 'city travel destination winter' : isSummer ? 'city travel destination summer' : 'city travel destination',
+    'metropolis': isWinter ? 'metropolis city travel winter' : isSummer ? 'metropolis city travel summer' : 'metropolis city travel',
+    'capital': isWinter ? 'capital city travel winter' : isSummer ? 'capital city travel summer' : 'capital city travel',
+    'port': isWinter ? 'port city travel winter' : isSummer ? 'port city travel summer' : 'port city travel',
+    'harbor': isWinter ? 'harbor port travel winter' : isSummer ? 'harbor port travel summer' : 'harbor port travel',
+    'marina': isWinter ? 'marina port travel winter' : isSummer ? 'marina port travel summer' : 'marina port travel',
+    'pier': isWinter ? 'pier harbor travel winter' : isSummer ? 'pier harbor travel summer' : 'pier harbor travel',
+    'boardwalk': isWinter ? 'boardwalk beach travel winter' : isSummer ? 'boardwalk beach travel summer' : 'boardwalk beach travel',
+    'promenade': isWinter ? 'promenade beach travel winter' : isSummer ? 'promenade beach travel summer' : 'promenade beach travel',
+    'boulevard': isWinter ? 'boulevard city travel winter' : isSummer ? 'boulevard city travel summer' : 'boulevard city travel',
+    'avenue': isWinter ? 'avenue city travel winter' : isSummer ? 'avenue city travel summer' : 'avenue city travel',
+    'street': isWinter ? 'street city travel winter' : isSummer ? 'street city travel summer' : 'street city travel',
+    'square': isWinter ? 'square city travel winter' : isSummer ? 'square city travel summer' : 'square city travel',
+    'plaza': isWinter ? 'plaza city travel winter' : isSummer ? 'plaza city travel summer' : 'plaza city travel',
+    'market': isWinter ? 'market city travel winter' : isSummer ? 'market city travel summer' : 'market city travel',
+    'bazaar': isWinter ? 'bazaar market travel winter' : isSummer ? 'bazaar market travel summer' : 'bazaar market travel',
+    'souq': isWinter ? 'souq market travel winter' : isSummer ? 'souq market travel summer' : 'souq market travel',
+    'boutique': isWinter ? 'boutique shopping travel winter' : isSummer ? 'boutique shopping travel summer' : 'boutique shopping travel',
+    'gallery': isWinter ? 'gallery art travel winter' : isSummer ? 'gallery art travel summer' : 'gallery art travel',
+    'exhibition': isWinter ? 'exhibition art travel winter' : isSummer ? 'exhibition art travel summer' : 'exhibition art travel',
+    'festival': isWinter ? 'festival cultural travel winter' : isSummer ? 'festival cultural travel summer' : 'festival cultural travel',
+    'celebration': isWinter ? 'celebration cultural travel winter' : isSummer ? 'celebration cultural travel summer' : 'celebration cultural travel',
+    'ceremony': isWinter ? 'ceremony cultural travel winter' : isSummer ? 'ceremony cultural travel summer' : 'ceremony cultural travel',
     'ritual': 'ritual cultural travel',
     'tradition': 'tradition cultural travel',
     'custom': 'custom cultural travel',
@@ -589,43 +816,126 @@ function createIntelligentSearchQuery(prompt: string): string {
  */
 export async function generateImages(prompt: string): Promise<ImageResult> {
   try {
+    console.log('=== GENERATE IMAGES START ===')
+    console.log('Prompt:', prompt)
+    console.log('Environment check:', process.env.UNSPLASH_ACCESS_KEY ? 'Found' : 'Not found')
+    
     // Skip AI image generation - no API keys configured
 
     // TODO: Add Stability AI integration when API is properly configured
     // For now, skip directly to Unsplash fallback
 
-    // Fallback to Unsplash
+    // Fallback to Unsplash with multiple quality strategies
+    console.log('Checking Unsplash API key:', process.env.UNSPLASH_ACCESS_KEY ? 'Found' : 'Not found')
     if (process.env.UNSPLASH_ACCESS_KEY) {
+      console.log('Unsplash API key found, attempting to fetch high-quality images...')
       try {
-        // Create a more intelligent search query
-        const searchQuery = createIntelligentSearchQuery(prompt)
+        console.log('Starting Unsplash API call...')
+        // Strategy 1: Try premium search with high-quality terms
+        let searchQuery
+        try {
+          searchQuery = createPremiumSearchQuery(prompt)
+          console.log('Unsplash premium search query:', searchQuery)
+        } catch (error) {
+          console.error('Error creating premium search query:', error)
+          searchQuery = prompt + ' travel destination'
+        }
 
-        console.log('Unsplash search query:', searchQuery)
-
-        const response = await unsplash.search.getPhotos({
+        console.log('Making Unsplash API call with params:', {
           query: searchQuery,
-          perPage: 4,
+          perPage: 20,
           orientation: 'landscape',
-          orderBy: 'relevant'
+          orderBy: 'relevant',
+          color: 'all'
         })
+        
+        let response = await unsplash.search.getPhotos({
+          query: searchQuery,
+          perPage: 5,
+          orientation: 'landscape'
+        })
+        
+        console.log('Unsplash API response type:', response.type)
+        console.log('Unsplash API response results count:', response.type === 'success' ? response.response.results.length : 'N/A')
+
+        // Strategy 2: If no results, try with popular/trending images
+        if (response.type !== 'success' || response.response.results.length === 0) {
+          console.log('Trying trending images strategy...')
+          searchQuery = createIntelligentSearchQuery(prompt)
+          response = await unsplash.search.getPhotos({
+            query: searchQuery,
+            perPage: 5,
+            orientation: 'landscape'
+          })
+        }
+
+        // Strategy 3: If still no results, try with featured/editorial content
+        if (response.type !== 'success' || response.response.results.length === 0) {
+          console.log('Trying featured content strategy...')
+          response = await unsplash.search.getPhotos({
+            query: searchQuery,
+            perPage: 5,
+            orientation: 'landscape'
+          })
+        }
 
         if (response.type === 'success' && response.response.results.length > 0) {
-          const urls = response.response.results
-            .map(photo => photo.urls.regular)
-            .slice(0, 4)
+          // Filter and sort images by quality metrics
+          const qualityImages = response.response.results
+            .map(photo => ({
+              ...photo,
+              qualityScore: calculateImageQuality(photo)
+            }))
+            .filter(photo => photo.qualityScore >= 15) // Minimum quality threshold
+            .sort((a, b) => b.qualityScore - a.qualityScore) // Sort by quality descending
+            .slice(0, 4) // Take top 4 highest quality images
+            .map(photo => {
+              // Use the highest quality URL available
+              if (photo.urls.full) return photo.urls.full
+              if (photo.urls.raw) return photo.urls.raw
+              if (photo.urls.regular) return photo.urls.regular
+              return photo.urls.small
+            })
 
-          console.log('Unsplash success:', urls.length, 'images found')
+          // If we don't have enough high-quality images, lower the threshold
+          let finalImages = qualityImages
+          if (finalImages.length < 4) {
+            console.log('Not enough high-quality images, lowering threshold...')
+            finalImages = response.response.results
+              .map(photo => ({
+                ...photo,
+                qualityScore: calculateImageQuality(photo)
+              }))
+              .filter(photo => photo.qualityScore >= 10) // Lower threshold
+              .sort((a, b) => b.qualityScore - a.qualityScore)
+            .slice(0, 4)
+              .map(photo => {
+                if (photo.urls.full) return photo.urls.full
+                if (photo.urls.raw) return photo.urls.raw
+                if (photo.urls.regular) return photo.urls.regular
+                return photo.urls.small
+              })
+          }
+
+          console.log('Unsplash success:', finalImages.length, 'high-quality images selected')
           return {
-            urls,
-            provider: 'Unsplash',
+            urls: finalImages,
+            provider: 'Unsplash (High Quality)',
             source: 'STOCK'
           }
         } else {
           console.warn('Unsplash returned no results for query:', searchQuery)
         }
       } catch (error) {
-        console.warn('Unsplash failed:', error)
+        console.error('Unsplash API failed with error:', error)
+        console.error('Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : undefined
+        })
       }
+    } else {
+      console.warn('No Unsplash API key found, skipping to mock data')
     }
 
     // If all providers fail, return contextual mock data
@@ -657,6 +967,11 @@ export async function generateImages(prompt: string): Promise<ImageResult> {
     }
   } catch (error) {
     console.error('Error in generateImages:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    })
     // Return mock data as final fallback
     return {
       urls: [
@@ -676,8 +991,8 @@ export async function generateImages(prompt: string): Promise<ImageResult> {
  */
 export async function generateSummary(prompt: string): Promise<string> {
   try {
-    console.warn('OpenAI API key not available, returning mock summary')
-    return generateMockSummary(prompt)
+      console.warn('OpenAI API key not available, returning mock summary')
+      return generateMockSummary(prompt)
   } catch (error) {
     console.error('Error generating summary:', error)
     return generateMockSummary(prompt)
@@ -748,8 +1063,116 @@ export async function generateTags(prompt: string): Promise<string[]> {
     return generateMockTags(prompt)
   } catch (error) {
     console.error('Error generating tags:', error)
-    return generateMockTags(prompt)
+      return generateMockTags(prompt)
   }
+}
+
+/**
+ * Calculates a quality score for an Unsplash photo based on multiple factors
+ */
+function calculateImageQuality(photo: any): number {
+  let score = 0
+  
+  // Experience-focused quality scoring
+  const description = (photo.description || '').toLowerCase()
+  const altDescription = (photo.alt_description || '').toLowerCase()
+  const combinedText = `${description} ${altDescription}`
+  
+  // Human presence and social context (highest priority)
+  if (combinedText.includes('people') || combinedText.includes('person') || combinedText.includes('group') || 
+      combinedText.includes('family') || combinedText.includes('friends') || combinedText.includes('couple')) {
+    score += 20 // Major bonus for human presence
+  }
+  
+  // Social and emotional keywords
+  if (combinedText.includes('enjoying') || combinedText.includes('having fun') || combinedText.includes('laughing') || 
+      combinedText.includes('smiling') || combinedText.includes('happy')) {
+    score += 15 // Emotional connection
+  }
+  
+  // Activity and experience keywords
+  if (combinedText.includes('skiing') || combinedText.includes('hiking') || combinedText.includes('dining') || 
+      combinedText.includes('exploring') || combinedText.includes('adventure') || combinedText.includes('relaxing')) {
+    score += 12 // Activity focus
+  }
+  
+  // Lifestyle and cozy keywords
+  if (combinedText.includes('cozy') || combinedText.includes('warm') || combinedText.includes('romantic') || 
+      combinedText.includes('intimate') || combinedText.includes('lifestyle')) {
+    score += 10 // Lifestyle appeal
+  }
+  
+  // Base engagement metrics (reduced weight)
+  if (photo.likes) score += Math.min(photo.likes / 200, 5) // Reduced from 10 to 5 points
+  if (photo.downloads) score += Math.min(photo.downloads / 100, 5) // Reduced from 10 to 5 points
+  
+  // Technical quality (reduced weight)
+  if (photo.width && photo.height) {
+    const aspectRatio = photo.width / photo.height
+    const isLandscape = aspectRatio > 1.2 && aspectRatio < 2.5
+    if (isLandscape) score += 3 // Reduced from 5 to 3
+    
+    const totalPixels = photo.width * photo.height
+    if (totalPixels > 2000000) score += 3 // Reduced from 5 to 3
+    if (totalPixels > 5000000) score += 2 // Reduced from 5 to 2
+    if (totalPixels > 10000000) score += 2 // Reduced from 5 to 2
+  }
+  
+  // Color and mood (enhanced)
+  if (photo.color) {
+    const colorValue = photo.color.replace('#', '')
+    const r = parseInt(colorValue.substr(0, 2), 16)
+    const g = parseInt(colorValue.substr(2, 2), 16)
+    const b = parseInt(colorValue.substr(4, 2), 16)
+    const brightness = (r + g + b) / 3
+    if (brightness > 50 && brightness < 200) score += 5 // Increased from 3 to 5
+  }
+  
+  // User engagement (reduced weight)
+  if (photo.views) score += Math.min(photo.views / 2000, 3) // Reduced from 5 to 3 points
+  
+  // Premium content (reduced weight)
+  if (photo.sponsored) score += 1 // Reduced from 2 to 1
+  if (photo.premium) score += 2 // Reduced from 3 to 2
+  
+  // Recency bonus (reduced weight)
+  if (photo.created_at) {
+    const daysSinceCreation = (Date.now() - new Date(photo.created_at).getTime()) / (1000 * 60 * 60 * 24)
+    if (daysSinceCreation < 30) score += 1 // Reduced from 2 to 1
+    if (daysSinceCreation < 7) score += 2 // Reduced from 3 to 2
+  }
+  
+  // Professional photographer (reduced weight)
+  if (photo.user && photo.user.total_photos > 100) score += 1 // Reduced from 2 to 1
+  if (photo.user && photo.user.total_likes > 1000) score += 1 // Reduced from 2 to 1
+  
+  return Math.max(score, 0) // Ensure non-negative score
+}
+
+/**
+ * Enhanced search query that prioritizes high-quality content
+ */
+function createPremiumSearchQuery(prompt: string): string {
+  const baseQuery = createIntelligentSearchQuery(prompt)
+  
+  // Add quality-enhancing keywords
+  const qualityKeywords = [
+    'professional', 'high resolution', '4k', 'hd', 'premium', 'award winning',
+    'stunning', 'breathtaking', 'spectacular', 'magnificent', 'gorgeous',
+    'beautiful', 'amazing', 'incredible', 'extraordinary', 'exceptional'
+  ]
+  
+  // Add travel-specific quality terms
+  const travelQualityTerms = [
+    'luxury', 'exclusive', 'boutique', 'upscale', 'high-end', 'premium',
+    'curated', 'handpicked', 'selected', 'chosen', 'recommended'
+  ]
+  
+  // Combine base query with quality terms
+  const qualityTerms = [...qualityKeywords, ...travelQualityTerms]
+  const randomQualityTerm = qualityTerms[Math.floor(Math.random() * qualityTerms.length)]
+  
+  return `${baseQuery} ${randomQualityTerm}`
 }
 
 // Helper functions
@@ -764,26 +1187,62 @@ function generateMockSummary(_prompt: string): string {
 }
 
 function generateMockTags(prompt: string): string[] {
-  const commonTags = ['travel', 'adventure', 'culture', 'exploration', 'relaxation', 'nature', 'city', 'beach', 'mountains', 'food', 'history', 'art', 'photography']
-  
-  // Simple keyword matching for more relevant tags
   const lowerPrompt = prompt.toLowerCase()
-  const matchedTags = commonTags.filter(tag => 
-    lowerPrompt.includes(tag) || 
-    (tag === 'beach' && (lowerPrompt.includes('ocean') || lowerPrompt.includes('coast'))) ||
-    (tag === 'mountains' && (lowerPrompt.includes('hiking') || lowerPrompt.includes('peak'))) ||
-    (tag === 'food' && (lowerPrompt.includes('restaurant') || lowerPrompt.includes('cuisine')))
-  )
+  const matchedTags: string[] = []
   
-  // Add some random tags if we don't have enough
-  while (matchedTags.length < 3) {
-    const randomTag = commonTags[Math.floor(Math.random() * commonTags.length)]
-    if (!matchedTags.includes(randomTag)) {
-      matchedTags.push(randomTag)
-    }
+  // Context-aware tag generation based on prompt content
+  if (lowerPrompt.includes('winter') || lowerPrompt.includes('snow') || lowerPrompt.includes('cold')) {
+    matchedTags.push('winter', 'snow', 'cold-weather')
   }
   
-  return matchedTags.slice(0, 5)
+  if (lowerPrompt.includes('switzerland') || lowerPrompt.includes('swiss') || lowerPrompt.includes('alps')) {
+    matchedTags.push('switzerland', 'alps', 'europe')
+  }
+  
+  if (lowerPrompt.includes('mountains') || lowerPrompt.includes('mountain') || lowerPrompt.includes('peak') || lowerPrompt.includes('alps')) {
+    matchedTags.push('mountains', 'hiking', 'nature')
+  }
+  
+  if (lowerPrompt.includes('trip') || lowerPrompt.includes('travel') || lowerPrompt.includes('journey')) {
+    matchedTags.push('travel', 'adventure')
+  }
+  
+  if (lowerPrompt.includes('ski') || lowerPrompt.includes('skiing') || lowerPrompt.includes('snowboard')) {
+    matchedTags.push('skiing', 'winter-sports')
+  }
+  
+  if (lowerPrompt.includes('village') || lowerPrompt.includes('town') || lowerPrompt.includes('city')) {
+    matchedTags.push('culture', 'local-life')
+  }
+  
+  if (lowerPrompt.includes('scenic') || lowerPrompt.includes('view') || lowerPrompt.includes('landscape')) {
+    matchedTags.push('scenic', 'photography', 'views')
+  }
+  
+  // Add season-specific tags
+  if (lowerPrompt.includes('winter')) {
+    matchedTags.push('winter-activities', 'cozy')
+  }
+  
+  // Add location-specific tags
+  if (lowerPrompt.includes('switzerland')) {
+    matchedTags.push('swiss-culture', 'chocolate', 'cheese')
+  }
+  
+  // Remove duplicates and limit to 5 tags
+  const uniqueTags = [...new Set(matchedTags)]
+  
+  // If we don't have enough relevant tags, add some generic but appropriate ones
+  if (uniqueTags.length < 3) {
+    const fallbackTags = ['nature', 'adventure', 'exploration']
+    fallbackTags.forEach(tag => {
+      if (!uniqueTags.includes(tag)) {
+        uniqueTags.push(tag)
+      }
+    })
+  }
+  
+  return uniqueTags.slice(0, 5)
 }
 
 function generateRandomColor(): string {

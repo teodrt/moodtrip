@@ -69,7 +69,7 @@ export function TopNav({ currentGroup, groups = [] }: TopNavProps) {
               <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
                 <Sparkles className="h-3 w-3 sm:h-5 sm:w-5 text-white" />
               </div>
-              <span className="text-lg sm:text-xl font-bold text-gray-900">MoodTrip</span>
+              <span className="text-title sm:text-headline font-heading text-gray-900">MoodTrip</span>
             </Link>
 
             {/* Group Switcher - Hidden on mobile */}

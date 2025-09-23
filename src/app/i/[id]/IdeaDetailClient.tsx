@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -61,9 +62,11 @@ interface IdeaDetailClientProps {
 
 export function IdeaDetailClient({ idea }: IdeaDetailClientProps) {
   const router = useRouter()
+  const { data: session } = useSession()
   const [isPromoting, setIsPromoting] = useState(false)
   const [isVoting, setIsVoting] = useState(false)
   const [isCommenting, setIsCommenting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [localVotes, setLocalVotes] = useState(idea.votes)
   const [localComments, setLocalComments] = useState(idea.comments)
 
@@ -164,6 +167,32 @@ export function IdeaDetailClient({ idea }: IdeaDetailClientProps) {
     }
   }, [isCommenting])
 
+  const handleDelete = useCallback(async () => {
+    if (isDeleting) return
+    
+    // Show confirmation dialog
+    const confirmed = window.confirm('Are you sure you want to delete this idea? This action cannot be undone.')
+    if (!confirmed) return
+    
+    setIsDeleting(true)
+    try {
+      const { deleteIdea } = await import('@/app/actions')
+      const result = await deleteIdea(idea.id)
+      
+      if (result.success) {
+        // Redirect to the group page after successful deletion
+        router.push(`/g/${idea.group.slug}`)
+      } else {
+        alert(result.error || 'Failed to delete idea')
+      }
+    } catch (error) {
+      console.error('Error deleting idea:', error)
+      alert('Failed to delete idea')
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [idea.id, idea.group.slug, isDeleting, router])
+
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
@@ -193,10 +222,13 @@ export function IdeaDetailClient({ idea }: IdeaDetailClientProps) {
       isPromoting={isPromoting}
       onVote={handleVote}
       onComment={handleComment}
+      onDelete={handleDelete}
       isVoting={isVoting}
       isCommenting={isCommenting}
+      isDeleting={isDeleting}
       localVotes={localVotes}
       localComments={localComments}
+      currentUserId={session?.user?.id}
     />
   )
 }

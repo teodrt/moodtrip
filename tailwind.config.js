@@ -123,8 +123,12 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Cal Sans", "Inter", "system-ui", "sans-serif"],
+        sans: ["var(--font-inter)", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+        serif: ["var(--font-playfair)", "Playfair Display", "Georgia", "Times New Roman", "serif"],
+        mono: ["var(--font-jetbrains-mono)", "JetBrains Mono", "SF Mono", "Monaco", "Cascadia Code", "Roboto Mono", "Consolas", "Courier New", "monospace"],
+        display: ["var(--font-playfair)", "Playfair Display", "Georgia", "Times New Roman", "serif"],
+        heading: ["var(--font-inter)", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+        body: ["var(--font-inter)", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
       },
       fontSize: {
         "2xs": ["0.625rem", { lineHeight: "0.75rem" }],
