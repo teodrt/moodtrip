@@ -12,6 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/use-toast'
 import { createIdea } from '@/app/actions'
+import { MoodThemeSelector } from './MoodThemeSelector'
+import { SuccessNotification } from './MicroInteractions'
+import { TravelLoadingState } from './TravelLoadingAnimations'
 
 const budgetOptions = [
   { value: 'LOW', label: 'Economy', icon: '💰', description: 'Budget-friendly options' },
@@ -42,6 +45,7 @@ export function LuxuryCreateIdeaForm({ slug }: LuxuryCreateIdeaFormProps) {
   const router = useRouter()
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
   const [formData, setFormData] = useState({
     prompt: '',
     budgetLevel: null as string | null,
@@ -75,6 +79,9 @@ export function LuxuryCreateIdeaForm({ slug }: LuxuryCreateIdeaFormProps) {
 
       console.log('✅ Idea created successfully:', result)
 
+      // Show success notification
+      setShowSuccess(true)
+      
       toast({
         title: "✨ Idea Created!",
         description: "Your travel vision is coming to life...",
@@ -83,7 +90,7 @@ export function LuxuryCreateIdeaForm({ slug }: LuxuryCreateIdeaFormProps) {
 
       setTimeout(() => {
         router.push(`/i/${result.id}`)
-      }, 500)
+      }, 2000)
     } catch (error) {
       console.error('❌ Error creating idea:', error)
       toast({
@@ -263,6 +270,14 @@ export function LuxuryCreateIdeaForm({ slug }: LuxuryCreateIdeaFormProps) {
             </CardContent>
           </Card>
 
+          {/* Mood Theme Selector */}
+          <MoodThemeSelector 
+            onThemeChange={(theme) => {
+              console.log('Theme changed:', theme)
+            }}
+            className="mb-8"
+          />
+
           {/* Options Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Budget Level */}
@@ -409,6 +424,23 @@ export function LuxuryCreateIdeaForm({ slug }: LuxuryCreateIdeaFormProps) {
             )}
           </motion.div>
         </motion.form>
+
+        {/* Success Notification */}
+        <SuccessNotification
+          show={showSuccess}
+          message="Your travel idea has been created successfully!"
+          onClose={() => setShowSuccess(false)}
+        />
+
+        {/* Travel Loading State */}
+        {isSubmitting && (
+          <TravelLoadingState
+            message="Creating your travel experience..."
+            showProgress={true}
+            progress={75}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+          />
+        )}
       </div>
     </div>
   )

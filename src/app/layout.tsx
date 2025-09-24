@@ -3,6 +3,8 @@ import { Inter, Playfair_Display, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { DynamicTopNav } from "@/components/DynamicTopNav";
 import { Providers } from "@/components/Providers";
+import { MoodThemeProvider } from "@/components/MoodThemeProvider";
+import { PageTransition } from "@/components/TravelLoadingAnimations";
 import { SkipToContent } from "@/components/Accessibility";
 import { ScreenReaderAnnouncements } from "@/components/Accessibility";
 import { KeyboardNavigationIndicator } from "@/components/Accessibility";
@@ -79,23 +81,27 @@ export default function RootLayout({
         className={`${inter.variable} ${playfairDisplay.variable} ${jetbrainsMono.variable} font-sans antialiased bg-gray-50 text-gray-900 min-h-screen`}
       >
         <Providers>
-          <SkipToContent />
-          <ScreenReaderAnnouncements />
-          <KeyboardNavigationIndicator />
-          <div className="min-h-screen bg-gray-50">
-            <DynamicTopNav 
-              groups={[
-                { slug: 'family', name: 'Family', memberCount: 4 },
-                { slug: 'friends', name: 'Friends', memberCount: 6 },
-                { slug: 'work', name: 'Work Team', memberCount: 8 },
-              ]}
-            />
-        <main id="main-content" tabIndex={-1}>
-          {children}
-        </main>
-      </div>
-      <AccessibilitySettings />
-      <ToastProvider />
+          <MoodThemeProvider>
+            <SkipToContent />
+            <ScreenReaderAnnouncements />
+            <KeyboardNavigationIndicator />
+            <div className="min-h-screen">
+              <DynamicTopNav 
+                groups={[
+                  { slug: 'family', name: 'Family', memberCount: 4 },
+                  { slug: 'friends', name: 'Friends', memberCount: 6 },
+                  { slug: 'work', name: 'Work Team', memberCount: 8 },
+                ]}
+              />
+              <main id="main-content" tabIndex={-1}>
+                <PageTransition>
+                  {children}
+                </PageTransition>
+              </main>
+            </div>
+            <AccessibilitySettings />
+            <ToastProvider />
+          </MoodThemeProvider>
     </Providers>
       </body>
     </html>

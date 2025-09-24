@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { ThumbsUp, HelpCircle, ThumbsDown } from 'lucide-react'
+import { ThumbsUp, HelpCircle, ThumbsDown, Heart, Star, Sparkles } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
+import { ParticleEffect } from './ParticleEffects'
 
 interface VotingSectionProps {
   ideaId: string
@@ -20,12 +21,25 @@ export function VotingSection({ ideaId, initialVotes }: VotingSectionProps) {
   const [votes, setVotes] = useState(initialVotes)
   const [userVote, setUserVote] = useState<'up' | 'maybe' | 'down' | null>(null)
   const [isVoting, setIsVoting] = useState(false)
+  const [showParticles, setShowParticles] = useState(false)
+  const [particleType, setParticleType] = useState<'heart' | 'star' | 'confetti'>('heart')
 
   const handleVote = async (voteType: 'up' | 'maybe' | 'down') => {
     if (isVoting) return
 
     const previousVote = userVote
     const previousVotes = { ...votes }
+
+    // Trigger particle effects based on vote type
+    if (voteType === 'up') {
+      setParticleType('heart')
+    } else if (voteType === 'maybe') {
+      setParticleType('star')
+    } else {
+      setParticleType('confetti')
+    }
+    setShowParticles(true)
+    setTimeout(() => setShowParticles(false), 2000)
 
     // Optimistic update
     setIsVoting(true)
@@ -143,6 +157,14 @@ export function VotingSection({ ideaId, initialVotes }: VotingSectionProps) {
           Recording your vote...
         </motion.div>
       )}
+
+      {/* Particle Effects */}
+      <ParticleEffect 
+        type={particleType}
+        trigger={showParticles}
+        onComplete={() => setShowParticles(false)}
+        className="absolute inset-0 pointer-events-none"
+      />
     </motion.div>
   )
 }

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Sparkles, Globe, Heart, Star, Zap } from 'lucide-react'
 import Link from 'next/link'
+import { MoodIndicator, SeasonalThemeSelector } from '@/components/MoodThemeProvider'
 
 export default function HomePage() {
   return (
@@ -145,6 +146,12 @@ export default function HomePage() {
             ease: "easeInOut"
           }}
         />
+      </div>
+
+      {/* Mood Theme Components */}
+      <MoodIndicator />
+      <div className="fixed top-4 left-4 z-50">
+        <SeasonalThemeSelector />
       </div>
 
       {/* Main Content */}
