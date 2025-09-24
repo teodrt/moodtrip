@@ -397,3 +397,129 @@ export const glowVariants: Variants = {
     }
   }
 }
+
+// Premium hover animations
+export const premiumHoverVariants: Variants = {
+  rest: {
+    scale: 1,
+    y: 0,
+    rotateX: 0,
+    rotateY: 0,
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+  },
+  hover: {
+    scale: 1.05,
+    y: -8,
+    rotateX: 5,
+    rotateY: 5,
+    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    transition: {
+      duration: 0.3,
+      ease: 'easeOut'
+    }
+  },
+  tap: {
+    scale: 0.95,
+    y: -2,
+    transition: {
+      duration: 0.1
+    }
+  }
+}
+
+// Premium card animations
+export const premiumCardVariants: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 30,
+    scale: 0.95,
+    rotateX: 15
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    rotateX: 0,
+    transition: {
+      duration: 0.6,
+      ease: 'easeOut'
+    }
+  },
+  hover: {
+    y: -12,
+    scale: 1.02,
+    rotateX: 5,
+    rotateY: 5,
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+    transition: {
+      duration: 0.4,
+      ease: 'easeOut'
+    }
+  }
+}
+
+// Premium button animations
+export const premiumButtonVariants: Variants = {
+  rest: {
+    scale: 1,
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+  },
+  hover: {
+    scale: 1.05,
+    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    transition: {
+      duration: 0.2,
+      ease: 'easeOut'
+    }
+  },
+  tap: {
+    scale: 0.95,
+    transition: {
+      duration: 0.1
+    }
+  }
+}
+
+// Premium loading animations
+export const premiumLoadingVariants: Variants = {
+  animate: {
+    rotate: 360,
+    scale: [1, 1.1, 1],
+    transition: {
+      duration: 1.5,
+      repeat: Infinity,
+      ease: 'easeInOut'
+    }
+  }
+}
+
+// Premium stagger animations
+export const premiumStaggerContainer: Variants = {
+  hidden: {
+    opacity: 0
+  },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.2
+    }
+  }
+}
+
+export const premiumStaggerItem: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 30,
+    scale: 0.9
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.5,
+      ease: 'easeOut'
+    }
+  }
+}

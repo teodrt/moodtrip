@@ -148,9 +148,11 @@ export default function HomePage() {
         />
       </div>
 
-      {/* Mood Theme Components */}
-      <MoodIndicator />
-      <div className="fixed top-4 left-4 z-50">
+      {/* Mood Theme Components - Repositioned to be less intrusive */}
+      <div className="fixed bottom-4 right-4 z-40">
+        <MoodIndicator />
+      </div>
+      <div className="fixed bottom-4 left-4 z-40">
         <SeasonalThemeSelector />
       </div>
 

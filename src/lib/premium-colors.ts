@@ -140,6 +140,15 @@ export const premiumColors = {
     midnight: 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
     gold: 'linear-gradient(135deg, #f7971e 0%, #ffd200 100%)',
     rose: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+    // New premium gradients
+    cosmic: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+    aurora: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 50%, #d299c2 100%)',
+    sunset: 'linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%)',
+    forest: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 50%, #667eea 100%)',
+    ocean: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #43e97b 100%)',
+    midnight: 'linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #667eea 100%)',
+    gold: 'linear-gradient(135deg, #f7971e 0%, #ffd200 50%, #f093fb 100%)',
+    rose: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #a8edea 100%)',
   },
   
   // Shadow Definitions

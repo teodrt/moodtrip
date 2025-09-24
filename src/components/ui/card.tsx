@@ -1,15 +1,60 @@
 import * as React from "react"
+import { motion } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+function Card({ 
+  className, 
+  variant = 'default',
+  gradient = 'primary',
+  hoverable = false,
+  ...props 
+}: React.ComponentProps<"div"> & {
+  variant?: 'default' | 'glass' | 'gradient' | 'elevated' | 'premium'
+  gradient?: 'primary' | 'sunset' | 'ocean' | 'forest' | 'aurora' | 'midnight' | 'gold' | 'rose' | 'cosmic'
+  hoverable?: boolean
+}) {
+  const getVariantStyles = () => {
+    switch (variant) {
+      case 'glass':
+        return 'bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl'
+      case 'gradient':
+        return `bg-gradient-to-br ${gradient === 'primary' ? 'from-blue-500/20 to-purple-600/20' : 
+                gradient === 'sunset' ? 'from-pink-500/20 to-red-500/20' :
+                gradient === 'ocean' ? 'from-cyan-500/20 to-blue-500/20' :
+                gradient === 'forest' ? 'from-green-500/20 to-emerald-500/20' :
+                gradient === 'aurora' ? 'from-purple-500/20 to-pink-500/20' :
+                gradient === 'midnight' ? 'from-slate-500/20 to-gray-500/20' :
+                gradient === 'gold' ? 'from-yellow-500/20 to-orange-500/20' :
+                gradient === 'rose' ? 'from-rose-500/20 to-pink-500/20' :
+                gradient === 'cosmic' ? 'from-blue-500/20 via-purple-500/20 to-pink-500/20' :
+                'from-blue-500/20 to-purple-600/20'} backdrop-blur-xl border border-white/20 shadow-2xl`
+      case 'elevated':
+        return 'bg-white shadow-2xl border border-gray-100'
+      case 'premium':
+        return 'bg-gradient-to-br from-white/95 to-white/90 backdrop-blur-xl border border-white/30 shadow-2xl'
+      default:
+        return 'bg-white shadow-lg border border-gray-200'
+    }
+  }
+
+  const Component = hoverable ? motion.div : 'div'
+  const motionProps = hoverable ? {
+    whileHover: { y: -4, scale: 1.02 },
+    whileTap: { scale: 0.98 },
+    transition: { duration: 0.2, ease: "easeOut" }
+  } : {}
+
   return (
-    <div
+    <Component
       data-slot="card"
       className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
+        "text-card-foreground flex flex-col gap-6 rounded-2xl py-6 transition-all duration-300",
+        getVariantStyles(),
+        hoverable && 'cursor-pointer',
         className
       )}
+      {...motionProps}
       {...props}
     />
   )

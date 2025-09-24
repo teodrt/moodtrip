@@ -7,10 +7,14 @@ import CredentialsProvider from "next-auth/providers/credentials"
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-    }),
+    // Google Provider (only if credentials are available)
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
+      GoogleProvider({
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      })
+    ] : []),
+    // Demo Credentials Provider
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -22,34 +26,38 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        // For demo purposes, accept any email/password
-        // In production, you'd validate against your database
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        })
+        try {
+          // For demo purposes, accept any email/password
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+          })
 
-        if (user) {
+          if (user) {
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              image: user.avatarUrl,
+            }
+          }
+
+          // Create demo user if doesn't exist
+          const newUser = await prisma.user.create({
+            data: {
+              email: credentials.email,
+              name: credentials.email.split('@')[0],
+            }
+          })
+
           return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            image: user.avatarUrl,
+            id: newUser.id,
+            email: newUser.email,
+            name: newUser.name,
+            image: newUser.avatarUrl,
           }
-        }
-
-        // Create demo user if doesn't exist
-        const newUser = await prisma.user.create({
-          data: {
-            email: credentials.email,
-            name: credentials.email.split('@')[0],
-          }
-        })
-
-        return {
-          id: newUser.id,
-          email: newUser.email,
-          name: newUser.name,
-          image: newUser.avatarUrl,
+        } catch (error) {
+          console.error('Auth error:', error)
+          return null
         }
       }
     })
@@ -72,9 +80,9 @@ export const authOptions: NextAuthOptions = {
     }
   },
   pages: {
-    signIn: "/auth/signin",
-    signUp: "/auth/signup",
-  }
+    signIn: "/login",
+  },
+  debug: process.env.NODE_ENV === "development"
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authOptions)

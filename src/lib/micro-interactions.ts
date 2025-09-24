@@ -343,7 +343,7 @@ export const triggerParticleEffect = (type: 'heart' | 'star' | 'confetti', eleme
   const centerY = rect.top + rect.height / 2
   
   // Create particle elements
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 8; i++) {
     const particle = document.createElement('div')
     particle.className = `absolute pointer-events-none z-50 ${
       type === 'heart' ? 'text-red-500' : 
@@ -363,16 +363,69 @@ export const triggerParticleEffect = (type: 'heart' | 'star' | 'confetti', eleme
         opacity: 0
       },
       { 
-        transform: `translate(${(Math.random() - 0.5) * 100}px, ${(Math.random() - 0.5) * 100}px) scale(1) rotate(360deg)`,
+        transform: `translate(${(Math.random() - 0.5) * 120}px, ${(Math.random() - 0.5) * 120}px) scale(1.2) rotate(360deg)`,
         opacity: 1
       },
       { 
-        transform: `translate(${(Math.random() - 0.5) * 200}px, ${(Math.random() - 0.5) * 200}px) scale(0) rotate(720deg)`,
+        transform: `translate(${(Math.random() - 0.5) * 250}px, ${(Math.random() - 0.5) * 250}px) scale(0) rotate(720deg)`,
         opacity: 0
       }
     ], {
-      duration: 2000,
+      duration: 2500,
       easing: 'ease-out'
+    })
+    
+    animation.onfinish = () => {
+      document.body.removeChild(particle)
+    }
+  }
+}
+
+// Premium particle effects
+export const triggerPremiumParticleEffect = (type: 'heart' | 'star' | 'confetti', element: HTMLElement) => {
+  const rect = element.getBoundingClientRect()
+  const centerX = rect.left + rect.width / 2
+  const centerY = rect.top + rect.height / 2
+  
+  // Create premium particle elements
+  for (let i = 0; i < 12; i++) {
+    const particle = document.createElement('div')
+    particle.className = `absolute pointer-events-none z-50 ${
+      type === 'heart' ? 'text-red-500' : 
+      type === 'star' ? 'text-yellow-500' : 
+      'text-purple-500'
+    }`
+    particle.style.left = `${centerX}px`
+    particle.style.top = `${centerY}px`
+    particle.innerHTML = type === 'heart' ? '❤️' : type === 'star' ? '⭐' : '🎉'
+    
+    document.body.appendChild(particle)
+    
+    // Premium animation with more complex easing
+    const animation = particle.animate([
+      { 
+        transform: 'translate(0, 0) scale(0) rotate(0deg)',
+        opacity: 0,
+        filter: 'blur(0px)'
+      },
+      { 
+        transform: `translate(${(Math.random() - 0.5) * 150}px, ${(Math.random() - 0.5) * 150}px) scale(1.5) rotate(180deg)`,
+        opacity: 1,
+        filter: 'blur(0px)'
+      },
+      { 
+        transform: `translate(${(Math.random() - 0.5) * 300}px, ${(Math.random() - 0.5) * 300}px) scale(0.5) rotate(360deg)`,
+        opacity: 0.8,
+        filter: 'blur(2px)'
+      },
+      { 
+        transform: `translate(${(Math.random() - 0.5) * 400}px, ${(Math.random() - 0.5) * 400}px) scale(0) rotate(540deg)`,
+        opacity: 0,
+        filter: 'blur(4px)'
+      }
+    ], {
+      duration: 3000,
+      easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
     })
     
     animation.onfinish = () => {

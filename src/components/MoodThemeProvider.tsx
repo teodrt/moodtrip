@@ -80,7 +80,7 @@ export function useMoodThemeContext() {
   return context
 }
 
-// Mood indicator component
+// Mood indicator component - Compact version
 export function MoodIndicator() {
   const { theme, currentSeason, currentMood, emotions } = useMoodThemeContext()
 
@@ -88,21 +88,22 @@ export function MoodIndicator() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed top-4 right-4 z-50"
+      whileHover={{ scale: 1.05 }}
+      className="cursor-pointer"
     >
-      <div className="bg-white/20 backdrop-blur-xl rounded-2xl p-4 border border-white/30">
-        <div className="flex items-center gap-3">
-          <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${theme.combined.primary}`} />
+      <div className="bg-white/10 backdrop-blur-xl rounded-xl p-3 border border-white/20 hover:border-white/40 transition-all duration-300">
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${theme.combined.primary}`} />
           <div>
-            <p className="text-white/90 text-sm font-medium">{currentSeason}</p>
-            <p className="text-white/70 text-xs capitalize">{currentMood}</p>
+            <p className="text-white/90 text-xs font-medium">{currentSeason}</p>
+            <p className="text-white/60 text-xs capitalize">{currentMood}</p>
           </div>
         </div>
-        <div className="mt-2 flex flex-wrap gap-1">
-          {emotions.slice(0, 3).map((emotion, index) => (
+        <div className="mt-1 flex flex-wrap gap-1">
+          {emotions.slice(0, 2).map((emotion, index) => (
             <span
               key={index}
-              className="text-xs px-2 py-1 bg-white/10 rounded-full text-white/80"
+              className="text-xs px-1.5 py-0.5 bg-white/10 rounded-full text-white/70"
             >
               {emotion}
             </span>
@@ -131,11 +132,11 @@ export function SeasonalThemeSelector() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-white/20 backdrop-blur-xl rounded-2xl p-4 border border-white/30 hover:border-white/50 transition-all duration-300"
+        className="bg-white/10 backdrop-blur-xl rounded-xl p-3 border border-white/20 hover:border-white/40 transition-all duration-300"
       >
-        <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-xl bg-gradient-to-r ${theme.combined.primary} flex items-center justify-center`}>
-            <span className="text-white text-lg">
+        <div className="flex items-center gap-2">
+          <div className={`w-6 h-6 rounded-lg bg-gradient-to-r ${theme.combined.primary} flex items-center justify-center`}>
+            <span className="text-white text-sm">
               {(() => {
                 const seasonName = theme.season.name
                 const seasonMap = { 'Spring': 3, 'Summer': 6, 'Autumn': 9, 'Winter': 12 }
@@ -145,8 +146,8 @@ export function SeasonalThemeSelector() {
             </span>
           </div>
           <div className="text-left">
-            <p className="text-white font-medium">{theme.season.name}</p>
-            <p className="text-white/70 text-sm">{theme.combined.description}</p>
+            <p className="text-white text-xs font-medium">{theme.season.name}</p>
+            <p className="text-white/60 text-xs">{theme.combined.description}</p>
           </div>
         </div>
       </motion.button>
