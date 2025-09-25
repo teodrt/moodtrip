@@ -473,7 +473,7 @@ export function LuxuryIdeaLayout({
         </div>
 
         {/* Voting Section - Clean and Simple */}
-        <div className="absolute bottom-4 left-4 z-30">
+        <div className="absolute top-4 left-4 z-30">
           <div className="flex gap-2 bg-black/20 backdrop-blur-md rounded-full px-3 py-2 border border-white/10">
             <button
               onClick={() => onVote('up')}
@@ -502,9 +502,9 @@ export function LuxuryIdeaLayout({
 
         {/* Color Palette - Simple and Clean */}
         {idea.palette && idea.palette.length > 0 && (
-          <div className="absolute bottom-4 right-4 z-30">
-            <div className="bg-black/20 backdrop-blur-md rounded-full px-3 py-2 border border-white/10">
-              <div className="flex gap-2">
+          <div className="absolute top-4 right-4 z-30">
+            <div className="bg-black/20 backdrop-blur-md rounded-full px-2 py-3 border border-white/10">
+              <div className="flex flex-col gap-2">
                 {idea.palette.slice(0, 5).map((color, index) => (
                   <div
                     key={color}

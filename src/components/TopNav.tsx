@@ -33,6 +33,7 @@ import {
   Users,
   Sparkles
 } from 'lucide-react'
+// import { DarkModeToggle } from './DarkModeToggle'
 
 interface TopNavProps {
   currentGroup?: string
@@ -60,7 +61,7 @@ export function TopNav({ currentGroup, groups = [] }: TopNavProps) {
   }
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+    <nav className="sticky top-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo and Group Switcher */}
@@ -69,12 +70,12 @@ export function TopNav({ currentGroup, groups = [] }: TopNavProps) {
               <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
                 <Sparkles className="h-3 w-3 sm:h-5 sm:w-5 text-white" />
               </div>
-              <span className="text-title sm:text-headline font-heading text-gray-900">MoodTrip</span>
+              <span className="text-title sm:text-headline font-heading text-gray-900 dark:text-white">MoodTrip</span>
             </Link>
 
             {/* Group Switcher - Hidden on mobile */}
             <div className="hidden sm:flex items-center space-x-3">
-              <Users className="h-4 w-4 text-gray-500" />
+              <Users className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               <Select 
                 value={currentGroup || 'family'} 
                 onValueChange={handleGroupChange}

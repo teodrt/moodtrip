@@ -814,7 +814,14 @@ function createIntelligentSearchQuery(prompt: string): string {
  * Generates images using AI providers with fallback to Unsplash
  * Prefers OpenAI Images or Stability AI, falls back to Unsplash search
  */
-export async function generateImages(prompt: string): Promise<ImageResult> {
+export async function generateImages(prompt: string, context?: {
+  location?: string,
+  month?: number,
+  budgetLevel?: string,
+  groupType?: string,
+  activity?: string,
+  mood?: string
+}): Promise<ImageResult> {
   try {
     console.log('=== GENERATE IMAGES START ===')
     console.log('Prompt:', prompt)
@@ -831,13 +838,25 @@ export async function generateImages(prompt: string): Promise<ImageResult> {
       console.log('Unsplash API key found, attempting to fetch high-quality images...')
       try {
         console.log('Starting Unsplash API call...')
-        // Strategy 1: Try premium search with high-quality terms
+        // Strategy 1: Try ultra-intelligent search with emotional context
         let searchQuery
         try {
-          searchQuery = createPremiumSearchQuery(prompt)
-          console.log('Unsplash premium search query:', searchQuery)
+          if (context) {
+            searchQuery = createUltraIntelligentSearchQuery(prompt, {
+              location: context.location || 'travel',
+              month: context.month || 6,
+              budgetLevel: context.budgetLevel || 'MEDIUM',
+              groupType: context.groupType || 'friends',
+              activity: context.activity || 'exploring',
+              mood: context.mood || 'relaxation'
+            })
+            console.log('Ultra-intelligent search query:', searchQuery)
+          } else {
+            searchQuery = createPremiumSearchQuery(prompt)
+            console.log('Premium search query:', searchQuery)
+          }
         } catch (error) {
-          console.error('Error creating premium search query:', error)
+          console.error('Error creating search query:', error)
           searchQuery = prompt + ' travel destination'
         }
 
@@ -880,15 +899,31 @@ export async function generateImages(prompt: string): Promise<ImageResult> {
         }
 
         if (response.type === 'success' && response.response.results.length > 0) {
-          // Filter and sort images by quality metrics
+          // Filter and sort images by ultra-emotional scoring
           const qualityImages = response.response.results
             .map(photo => ({
               ...photo,
-              qualityScore: calculateImageQuality(photo)
+              qualityScore: calculateImageQuality(photo),
+              emotionalScore: context ? calculateUltraEmotionalScore(photo, {
+                location: context.location || 'travel',
+                month: context.month || 6,
+                budgetLevel: context.budgetLevel || 'MEDIUM',
+                groupType: context.groupType || 'friends',
+                activity: context.activity || 'exploring',
+                mood: context.mood || 'relaxation'
+              }) : 0,
+              combinedScore: calculateImageQuality(photo) + (context ? calculateUltraEmotionalScore(photo, {
+                location: context.location || 'travel',
+                month: context.month || 6,
+                budgetLevel: context.budgetLevel || 'MEDIUM',
+                groupType: context.groupType || 'friends',
+                activity: context.activity || 'exploring',
+                mood: context.mood || 'relaxation'
+              }) : 0)
             }))
-            .filter(photo => photo.qualityScore >= 15) // Minimum quality threshold
-            .sort((a, b) => b.qualityScore - a.qualityScore) // Sort by quality descending
-            .slice(0, 4) // Take top 4 highest quality images
+            .filter(photo => photo.combinedScore >= 25) // Higher threshold for emotional relevance
+            .sort((a, b) => b.combinedScore - a.combinedScore) // Sort by combined emotional + quality score
+            .slice(0, 4) // Take top 4 most emotionally relevant images
             .map(photo => {
               // Use the highest quality URL available
               if (photo.urls.full) return photo.urls.full
@@ -897,17 +932,33 @@ export async function generateImages(prompt: string): Promise<ImageResult> {
               return photo.urls.small
             })
 
-          // If we don't have enough high-quality images, lower the threshold
+          // If we don't have enough emotionally relevant images, lower the threshold
           let finalImages = qualityImages
           if (finalImages.length < 4) {
-            console.log('Not enough high-quality images, lowering threshold...')
+            console.log('Not enough emotionally relevant images, lowering threshold...')
             finalImages = response.response.results
               .map(photo => ({
                 ...photo,
-                qualityScore: calculateImageQuality(photo)
+                qualityScore: calculateImageQuality(photo),
+                emotionalScore: context ? calculateUltraEmotionalScore(photo, {
+                  location: context.location || 'travel',
+                  month: context.month || 6,
+                  budgetLevel: context.budgetLevel || 'MEDIUM',
+                  groupType: context.groupType || 'friends',
+                  activity: context.activity || 'exploring',
+                  mood: context.mood || 'relaxation'
+                }) : 0,
+                combinedScore: calculateImageQuality(photo) + (context ? calculateUltraEmotionalScore(photo, {
+                  location: context.location || 'travel',
+                  month: context.month || 6,
+                  budgetLevel: context.budgetLevel || 'MEDIUM',
+                  groupType: context.groupType || 'friends',
+                  activity: context.activity || 'exploring',
+                  mood: context.mood || 'relaxation'
+                }) : 0)
               }))
-              .filter(photo => photo.qualityScore >= 10) // Lower threshold
-              .sort((a, b) => b.qualityScore - a.qualityScore)
+              .filter(photo => photo.combinedScore >= 15) // Lower threshold
+              .sort((a, b) => b.combinedScore - a.combinedScore)
             .slice(0, 4)
               .map(photo => {
                 if (photo.urls.full) return photo.urls.full
@@ -1068,6 +1119,186 @@ export async function generateTags(prompt: string): Promise<string[]> {
 }
 
 /**
+ * Gets geographic + seasonal emotional keywords for ultra-intelligent context
+ */
+function getGeographicSeasonalEmotions(location: string, month: number): string[] {
+  const locationSeasons = {
+    'switzerland': {
+      winter: ['cozy alpine', 'snow-covered peaks', 'warm chalets', 'hot chocolate', 'skiing', 'fireplace'],
+      spring: ['alpine meadows', 'blooming flowers', 'fresh mountain air', 'hiking trails', 'green valleys'],
+      summer: ['mountain hiking', 'alpine lakes', 'sunny peaks', 'outdoor dining', 'vibrant nature'],
+      autumn: ['golden mountains', 'harvest season', 'cozy villages', 'warm colors', 'alpine beauty']
+    },
+    'norway': {
+      winter: ['northern lights', 'aurora borealis', 'cozy cabin', 'winter wonderland', 'snow-covered', 'warm fire'],
+      spring: ['fjord waterfalls', 'blooming nature', 'fresh air', 'green valleys', 'mild weather'],
+      summer: ['midnight sun', 'fjord cruises', 'summer hiking', 'outdoor activities', 'vibrant nature'],
+      autumn: ['golden fjords', 'harvest colors', 'cozy evenings', 'warm autumn', 'fall beauty']
+    },
+    'iceland': {
+      winter: ['northern lights', 'ice caves', 'winter wonderland', 'cozy hot springs', 'snow-covered'],
+      spring: ['geysers', 'waterfalls', 'fresh nature', 'mild weather', 'blooming'],
+      summer: ['midnight sun', 'outdoor adventures', 'summer activities', 'vibrant nature'],
+      autumn: ['golden landscapes', 'harvest season', 'cozy evenings', 'warm colors']
+    },
+    'japan': {
+      winter: ['snow temples', 'warm onsens', 'cozy ryokans', 'winter festivals', 'hot sake'],
+      spring: ['cherry blossoms', 'sakura season', 'blooming gardens', 'spring festivals', 'fresh beauty'],
+      summer: ['summer festivals', 'warm nights', 'outdoor dining', 'vibrant energy', 'tropical summer'],
+      autumn: ['maple leaves', 'autumn colors', 'harvest season', 'cozy evenings', 'warm autumn']
+    },
+    'mexico': {
+      winter: ['warm beaches', 'tropical paradise', 'sunny days', 'ocean breeze', 'vibrant colors'],
+      spring: ['blooming flowers', 'fresh tropical', 'warm weather', 'outdoor festivals', 'colorful markets'],
+      summer: ['hot tropical', 'beach paradise', 'vibrant summer', 'ocean activities', 'tropical heat'],
+      autumn: ['warm autumn', 'tropical harvest', 'comfortable weather', 'outdoor dining', 'cozy evenings']
+    },
+    'italy': {
+      winter: ['cozy villages', 'warm restaurants', 'winter charm', 'indoor culture', 'comfortable'],
+      spring: ['blooming countryside', 'fresh air', 'mild weather', 'outdoor dining', 'spring beauty'],
+      summer: ['vibrant summer', 'outdoor festivals', 'warm weather', 'beach activities', 'summer energy'],
+      autumn: ['harvest season', 'golden countryside', 'cozy evenings', 'warm autumn', 'fall beauty']
+    }
+  }
+  
+  const season = getSeasonalContext(month)
+  return locationSeasons[location.toLowerCase()]?.[season] || ['travel', 'destination']
+}
+
+/**
+ * Gets activity + emotional state mapping for intelligent context
+ */
+function getActivityEmotionalState(activity: string, season: string): string[] {
+  const activityEmotions = {
+    'skiing': {
+      winter: ['exhilarating', 'challenging', 'achievement', 'cold mountain', 'warm lodge', 'hot chocolate'],
+      summer: ['unusual', 'indoor', 'artificial', 'cool escape', 'indoor skiing']
+    },
+    'beach': {
+      summer: ['relaxing', 'peaceful', 'warm sand', 'ocean breeze', 'tropical paradise'],
+      winter: ['unusual', 'cold beach', 'winter ocean', 'cozy beach', 'warm escape']
+    },
+    'hiking': {
+      spring: ['fresh air', 'blooming trails', 'new growth', 'energetic', 'renewal'],
+      summer: ['sunny trails', 'warm weather', 'outdoor adventure', 'vibrant nature'],
+      autumn: ['golden trails', 'harvest colors', 'cozy paths', 'warm autumn'],
+      winter: ['snow trails', 'winter wonderland', 'cold adventure', 'warm gear']
+    },
+    'dining': {
+      winter: ['cozy restaurant', 'warm atmosphere', 'indoor dining', 'comfortable'],
+      summer: ['outdoor dining', 'al fresco', 'warm evening', 'vibrant atmosphere'],
+      spring: ['fresh ingredients', 'spring menu', 'outdoor terrace', 'mild weather'],
+      autumn: ['harvest menu', 'cozy evening', 'warm atmosphere', 'autumn flavors']
+    },
+    'culture': {
+      winter: ['indoor museums', 'warm galleries', 'cozy culture', 'comfortable'],
+      summer: ['outdoor festivals', 'vibrant culture', 'warm evenings', 'summer events'],
+      spring: ['blooming culture', 'spring festivals', 'fresh energy', 'mild weather'],
+      autumn: ['harvest festivals', 'cozy culture', 'warm evenings', 'autumn events']
+    }
+  }
+  
+  return activityEmotions[activity]?.[season] || ['activity', 'experience']
+}
+
+/**
+ * Gets group emotional keywords for intelligent context
+ */
+function getGroupEmotionalKeywords(groupType: string): string[] {
+  const groupEmotions = {
+    'family': ['family together', 'children playing', 'parents watching', 'generations', 'safe environment', 'comfortable', 'loving', 'protective', 'joyful', 'memorable moments'],
+    'romantic': ['couple intimate', 'romantic dinner', 'sunset together', 'hand in hand', 'private moment', 'passionate', 'tender', 'dreamy', 'intimate', 'loving'],
+    'friends': ['friends laughing', 'group adventure', 'together fun', 'bonding', 'carefree', 'energetic', 'exciting', 'adventurous', 'celebrating', 'memories'],
+    'coworkers': ['professional team', 'business meeting', 'networking', 'confident', 'successful', 'collaborative', 'sophisticated', 'formal', 'productive', 'achievement']
+  }
+  return groupEmotions[groupType] || ['group', 'together']
+}
+
+/**
+ * Gets budget emotional keywords for intelligent context
+ */
+function getBudgetEmotionalKeywords(budgetLevel: string): string[] {
+  const budgetEmotions = {
+    'LOW': ['authentic local', 'genuine community', 'simple beauty', 'real people', 'everyday life', 'street culture', 'local markets', 'genuine experience'],
+    'MEDIUM': ['comfortable standard', 'reliable quality', 'pleasant experience', 'balanced', 'good value', 'decent quality', 'moderate comfort'],
+    'HIGH': ['luxury exclusive', 'premium experience', 'sophisticated elegance', 'refined atmosphere', 'upscale environment', 'boutique quality', 'exclusive access']
+  }
+  return budgetEmotions[budgetLevel] || ['comfortable', 'good']
+}
+
+/**
+ * Gets mood emotional keywords for intelligent context
+ */
+function getMoodEmotionalKeywords(mood: string): string[] {
+  const moodEmotions = {
+    'relaxation': ['peaceful calm', 'serene quiet', 'tranquil', 'restful', 'zen', 'meditative', 'quiet beauty'],
+    'adventure': ['exciting thrilling', 'challenging active', 'daring bold', 'energetic dynamic', 'adrenaline rush'],
+    'culture': ['historical cultural', 'educational enlightening', 'artistic creative', 'traditional authentic', 'heritage legacy'],
+    'luxury': ['exclusive premium', 'sophisticated elegant', 'refined polished', 'upscale high-end', 'boutique exclusive']
+  }
+  return moodEmotions[mood] || ['pleasant', 'enjoyable']
+}
+
+/**
+ * Calculates ultra-emotional score for intelligent image selection
+ */
+function calculateUltraEmotionalScore(photo: any, context: {
+  location: string,
+  month: number,
+  budgetLevel: string,
+  groupType: string,
+  activity: string,
+  mood: string
+}): number {
+  let score = 0
+  const description = (photo.description || '').toLowerCase()
+  const altDescription = (photo.alt_description || '').toLowerCase()
+  const combinedText = `${description} ${altDescription}`
+  
+  // 1. Geographic + Seasonal Emotional Resonance
+  const geoSeasonalEmotions = getGeographicSeasonalEmotions(context.location, context.month)
+  geoSeasonalEmotions.forEach(emotion => {
+    if (combinedText.includes(emotion)) {
+      score += 20 // Highest priority - location + season emotional match
+    }
+  })
+  
+  // 2. Activity + Emotional State
+  const activityEmotions = getActivityEmotionalState(context.activity, getSeasonalContext(context.month))
+  activityEmotions.forEach(emotion => {
+    if (combinedText.includes(emotion)) {
+      score += 18 // High priority - activity emotional state
+    }
+  })
+  
+  // 3. Group Emotional Resonance
+  const groupEmotions = getGroupEmotionalKeywords(context.groupType)
+  groupEmotions.forEach(emotion => {
+    if (combinedText.includes(emotion)) {
+      score += 15 // Group emotional match
+    }
+  })
+  
+  // 4. Budget Emotional Context
+  const budgetEmotions = getBudgetEmotionalKeywords(context.budgetLevel)
+  budgetEmotions.forEach(emotion => {
+    if (combinedText.includes(emotion)) {
+      score += 12 // Budget emotional resonance
+    }
+  })
+  
+  // 5. Mood Emotional State
+  const moodEmotions = getMoodEmotionalKeywords(context.mood)
+  moodEmotions.forEach(emotion => {
+    if (combinedText.includes(emotion)) {
+      score += 10 // Mood emotional alignment
+    }
+  })
+  
+  return score
+}
+
+/**
  * Calculates a quality score for an Unsplash photo based on multiple factors
  */
 function calculateImageQuality(photo: any): number {
@@ -1147,6 +1378,38 @@ function calculateImageQuality(photo: any): number {
   if (photo.user && photo.user.total_likes > 1000) score += 1 // Reduced from 2 to 1
   
   return Math.max(score, 0) // Ensure non-negative score
+}
+
+/**
+ * Creates ultra-intelligent search query with emotional context
+ */
+function createUltraIntelligentSearchQuery(prompt: string, context: {
+  location: string,
+  month: number,
+  budgetLevel: string,
+  groupType: string,
+  activity: string,
+  mood: string
+}): string {
+  const baseQuery = createIntelligentSearchQuery(prompt)
+  
+  // Combine all emotional contexts
+  const geoSeasonalEmotions = getGeographicSeasonalEmotions(context.location, context.month)
+  const activityEmotions = getActivityEmotionalState(context.activity, getSeasonalContext(context.month))
+  const groupEmotions = getGroupEmotionalKeywords(context.groupType)
+  const budgetEmotions = getBudgetEmotionalKeywords(context.budgetLevel)
+  const moodEmotions = getMoodEmotionalKeywords(context.mood)
+  
+  // Create ultra-specific emotional search query
+  const emotionalQuery = [
+    ...geoSeasonalEmotions.slice(0, 3),
+    ...activityEmotions.slice(0, 2),
+    ...groupEmotions.slice(0, 2),
+    ...budgetEmotions.slice(0, 2),
+    ...moodEmotions.slice(0, 2)
+  ].join(' ')
+  
+  return `${baseQuery} ${emotionalQuery}`
 }
 
 /**

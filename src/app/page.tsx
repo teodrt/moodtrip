@@ -4,10 +4,11 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Sparkles, Globe, Heart, Star, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { MoodIndicator, SeasonalThemeSelector } from '@/components/MoodThemeProvider'
+import { SimpleDarkModeToggle } from '@/components/SimpleDarkModeToggle'
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 relative overflow-hidden transition-colors duration-300">
       {/* Premium Animated Background - Travel Inspired */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Main floating orbs with travel-inspired movement */}
@@ -148,11 +149,16 @@ export default function HomePage() {
         />
       </div>
 
+      {/* Dark Mode Toggle */}
+      <div className="fixed top-4 right-4 z-40">
+        <SimpleDarkModeToggle />
+      </div>
+
       {/* Mood Theme Components - Repositioned to be less intrusive */}
-      <div className="fixed bottom-4 right-4 z-40">
+      <div className="fixed bottom-4 right-4 z-40 hidden">
         <MoodIndicator />
       </div>
-      <div className="fixed bottom-4 left-4 z-40">
+      <div className="fixed bottom-4 left-4 z-40 hidden">
         <SeasonalThemeSelector />
       </div>
 

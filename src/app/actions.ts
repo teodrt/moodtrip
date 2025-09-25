@@ -167,9 +167,28 @@ export async function generateMoodboard(ideaId: string): Promise<void> {
       return
     }
 
-    // 2. Generate images using AI
+    // 2. Generate images using AI with emotional context
     console.log('🖼️ Generating images for prompt:', idea.prompt)
-    const imageResult = await generateImages(idea.prompt)
+    const imageResult = await generateImages(idea.prompt, {
+      location: idea.prompt.toLowerCase().includes('switzerland') ? 'switzerland' : 
+                idea.prompt.toLowerCase().includes('norway') ? 'norway' :
+                idea.prompt.toLowerCase().includes('iceland') ? 'iceland' :
+                idea.prompt.toLowerCase().includes('japan') ? 'japan' :
+                idea.prompt.toLowerCase().includes('mexico') ? 'mexico' :
+                idea.prompt.toLowerCase().includes('italy') ? 'italy' : 'travel',
+      month: idea.monthHint || 6,
+      budgetLevel: idea.budgetLevel || 'MEDIUM',
+      groupType: idea.kidsFriendly ? 'family' : 'friends',
+      activity: idea.prompt.toLowerCase().includes('ski') ? 'skiing' :
+                idea.prompt.toLowerCase().includes('beach') ? 'beach' :
+                idea.prompt.toLowerCase().includes('hiking') ? 'hiking' :
+                idea.prompt.toLowerCase().includes('dining') ? 'dining' :
+                idea.prompt.toLowerCase().includes('culture') ? 'culture' : 'exploring',
+      mood: idea.prompt.toLowerCase().includes('relax') ? 'relaxation' :
+            idea.prompt.toLowerCase().includes('adventure') ? 'adventure' :
+            idea.prompt.toLowerCase().includes('culture') ? 'culture' :
+            idea.prompt.toLowerCase().includes('luxury') ? 'luxury' : 'relaxation'
+    })
     console.log(`🖼️ Generated ${imageResult.urls.length} images using ${imageResult.provider}`)
 
     // 3. Download and save images locally
